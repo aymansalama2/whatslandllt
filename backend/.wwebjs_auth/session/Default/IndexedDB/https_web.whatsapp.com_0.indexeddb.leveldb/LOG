@@ -1,0 +1,35 @@
+2025/07/21-16:09:14.983 4344 Reusing MANIFEST C:\Users\salam\Desktop\Nouveau dossier (5)\whatsapp-qr-app - Copie (2)\whatsapp-qr-app\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/07/21-16:09:14.984 4344 Recovering log #272
+2025/07/21-16:09:15.003 4344 Reusing old log C:\Users\salam\Desktop\Nouveau dossier (5)\whatsapp-qr-app - Copie (2)\whatsapp-qr-app\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000272.log 
+2025/07/21-16:09:16.199 47e4 Level-0 table #280: started
+2025/07/21-16:09:16.210 47e4 Level-0 table #280: 573240 bytes OK
+2025/07/21-16:09:16.210 47e4 Delete type=0 #272
+2025/07/21-16:09:16.211 47e4 Manual compaction at level-0 from '\x00.\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00/\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/21-16:09:17.363 5e00 Compacting 1@1 + 4@2 files
+2025/07/21-16:09:17.415 5e00 Generated table #281@1: 52900 keys, 2233712 bytes
+2025/07/21-16:09:17.490 5e00 Generated table #282@1: 40840 keys, 2196683 bytes
+2025/07/21-16:09:17.544 5e00 Generated table #283@1: 25677 keys, 2189163 bytes
+2025/07/21-16:09:17.578 5e00 Generated table #284@1: 42502 keys, 1210292 bytes
+2025/07/21-16:09:17.578 5e00 Compacted 1@1 + 4@2 files => 7829850 bytes
+2025/07/21-16:09:17.579 5e00 compacted to: files[ 0 0 4 0 0 0 0 ]
+2025/07/21-16:09:17.580 5e00 Delete type=2 #274
+2025/07/21-16:09:17.580 5e00 Delete type=2 #275
+2025/07/21-16:09:17.580 5e00 Delete type=2 #276
+2025/07/21-16:09:17.580 5e00 Delete type=2 #277
+2025/07/21-16:09:17.580 5e00 Delete type=2 #280
+2025/07/21-16:14:18.135 5e00 Level-0 table #286: started
+2025/07/21-16:14:18.147 5e00 Level-0 table #286: 543860 bytes OK
+2025/07/21-16:14:18.148 5e00 Delete type=0 #279
+2025/07/21-16:14:18.149 5e00 Manual compaction at level-0 from '\x00/\x00\x00\x00' @ 72057594037927935 : 1 .. '\x000\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/21-16:14:23.402 5e00 Compacting 1@1 + 4@2 files
+2025/07/21-16:14:23.446 5e00 Generated table #287@1: 54809 keys, 2233389 bytes
+2025/07/21-16:14:23.494 5e00 Generated table #288@1: 41830 keys, 2196401 bytes
+2025/07/21-16:14:23.538 5e00 Generated table #289@1: 25597 keys, 2188638 bytes
+2025/07/21-16:14:23.567 5e00 Generated table #290@1: 42696 keys, 1286729 bytes
+2025/07/21-16:14:23.567 5e00 Compacted 1@1 + 4@2 files => 7905157 bytes
+2025/07/21-16:14:23.568 5e00 compacted to: files[ 0 0 4 0 0 0 0 ]
+2025/07/21-16:14:23.568 5e00 Delete type=2 #281
+2025/07/21-16:14:23.569 5e00 Delete type=2 #282
+2025/07/21-16:14:23.569 5e00 Delete type=2 #283
+2025/07/21-16:14:23.569 5e00 Delete type=2 #284
+2025/07/21-16:14:23.569 5e00 Delete type=2 #286

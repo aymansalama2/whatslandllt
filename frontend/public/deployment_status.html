@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statut de déploiement WhatsLand</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #1a73e8;
+            border-bottom: 2px solid #1a73e8;
+            padding-bottom: 10px;
+        }
+        .status-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .success {
+            color: #0d904f;
+            font-weight: bold;
+        }
+        .warning {
+            color: #f29d38;
+            font-weight: bold;
+        }
+        .error {
+            color: #d23f31;
+            font-weight: bold;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #185abc;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Statut de déploiement WhatsLand</h1>
+    
+    <div class="status-card">
+        <h2>Informations du système</h2>
+        <div id="system-info">Chargement...</div>
+    </div>
+    
+    <div class="status-card">
+        <h2>Connexion à l'API</h2>
+        <div id="api-status">Vérification de la connexion...</div>
+        <button onclick="checkApiStatus()">Vérifier la connexion</button>
+    </div>
+    
+    <div class="status-card">
+        <h2>Statut de WhatsApp</h2>
+        <div id="whatsapp-status">Vérification du statut...</div>
+        <button onclick="checkWhatsappStatus()">Vérifier le statut</button>
+    </div>
+    
+    <div class="status-card">
+        <h2>Variables d'environnement</h2>
+        <div id="env-status">Vérification des variables...</div>
+        <pre id="env-details" class="hidden"></pre>
+        <button onclick="toggleEnvDetails()">Afficher les détails</button>
+    </div>
+    
+    <div class="status-card">
+        <h2>État de la base de données</h2>
+        <div id="db-status">Vérification de la base de données...</div>
+        <button onclick="checkDatabaseStatus()">Vérifier la base de données</button>
+    </div>
+
+    <script>
+        // Informations système
+        function getSystemInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                dateTime: new Date().toLocaleString(),
+                language: navigator.language,
+                platform: navigator.platform,
+                hostname: window.location.hostname,
+                protocol: window.location.protocol,
+                url: window.location.href
+            };
+            
+            let html = '<table>';
+            for (const [key, value] of Object.entries(info)) {
+                html += `<tr><th>${key}</th><td>${value}</td></tr>`;
+            }
+            html += '</table>';
+            
+            document.getElementById('system-info').innerHTML = html;
+        }
+        
+        // Vérification de l'API
+        async function checkApiStatus() {
+            const statusElement = document.getElementById('api-status');
+            statusElement.innerHTML = 'Vérification en cours...';
+            
+            try {
+                // Récupérer l'URL de l'API depuis les variables d'environnement
+                const apiUrl = getApiUrl();
+                
+                const response = await fetch(`${apiUrl}/api/status`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    statusElement.innerHTML = `<span class="success">✅ API connectée avec succès!</span>
+                        <p>URL: ${apiUrl}</p>
+                        <p>Message: ${data.message}</p>`;
+                } else {
+                    statusElement.innerHTML = `<span class="warning">⚠️ API connectée mais statut anormal</span>
+                        <p>URL: ${apiUrl}</p>
+                        <p>Réponse: ${JSON.stringify(data)}</p>`;
+                }
+            } catch (error) {
+                statusElement.innerHTML = `<span class="error">❌ Impossible de se connecter à l'API</span>
+                    <p>Erreur: ${error.message}</p>`;
+            }
+        }
+        
+        // Vérification du statut WhatsApp
+        async function checkWhatsappStatus() {
+            const statusElement = document.getElementById('whatsapp-status');
+            statusElement.innerHTML = 'Vérification en cours...';
+            
+            try {
+                const apiUrl = getApiUrl();
+                const response = await fetch(`${apiUrl}/api/status`);
+                const data = await response.json();
+                
+                let statusHtml = '<table>';
+                statusHtml += `<tr><th>WhatsApp prêt</th><td>${data.whatsappReady ? '<span class="success">Oui</span>' : '<span class="error">Non</span>'}</td></tr>`;
+                statusHtml += `<tr><th>WhatsApp authentifié</th><td>${data.whatsappAuthenticated ? '<span class="success">Oui</span>' : '<span class="error">Non</span>'}</td></tr>`;
+                statusHtml += `<tr><th>QR disponible</th><td>${data.qrAvailable ? '<span class="success">Oui</span>' : '<span class="warning">Non</span>'}</td></tr>`;
+                statusHtml += '</table>';
+                
+                statusElement.innerHTML = statusHtml;
+            } catch (error) {
+                statusElement.innerHTML = `<span class="error">❌ Erreur lors de la vérification du statut WhatsApp</span>
+                    <p>Erreur: ${error.message}</p>`;
+            }
+        }
+        
+        // Variables d'environnement
+        function checkEnvironmentVariables() {
+            const statusElement = document.getElementById('env-status');
+            const detailsElement = document.getElementById('env-details');
+            
+            try {
+                const apiUrl = getApiUrl();
+                const envVars = {
+                    'VITE_API_URL': import.meta.env.VITE_API_URL || 'Non défini',
+                    'API URL détectée': apiUrl,
+                    'Mode Production': import.meta.env.PROD ? 'Oui' : 'Non',
+                    'Base URL': import.meta.env.BASE_URL || '/',
+                };
+                
+                let statusHtml = '';
+                let detailsHtml = '';
+                
+                if (import.meta.env.VITE_API_URL) {
+                    statusHtml = '<span class="success">✅ Variables d\'environnement configurées</span>';
+                } else {
+                    statusHtml = '<span class="warning">⚠️ Variable VITE_API_URL non définie, utilisation de l\'URL par défaut</span>';
+                }
+                
+                detailsHtml = JSON.stringify(envVars, null, 2);
+                
+                statusElement.innerHTML = statusHtml;
+                detailsElement.textContent = detailsHtml;
+            } catch (error) {
+                statusElement.innerHTML = `<span class="error">❌ Erreur lors de la vérification des variables d'environnement</span>
+                    <p>Erreur: ${error.message}</p>`;
+                detailsElement.textContent = error.stack;
+            }
+        }
+        
+        function toggleEnvDetails() {
+            const detailsElement = document.getElementById('env-details');
+            if (detailsElement.classList.contains('hidden')) {
+                detailsElement.classList.remove('hidden');
+            } else {
+                detailsElement.classList.add('hidden');
+            }
+        }
+        
+        // Vérification de la base de données
+        async function checkDatabaseStatus() {
+            const statusElement = document.getElementById('db-status');
+            statusElement.innerHTML = 'Vérification en cours...';
+            
+            try {
+                const apiUrl = getApiUrl();
+                
+                // Essayer de récupérer des statistiques pour tester la connexion DB
+                const response = await fetch(`${apiUrl}/api/stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusElement.innerHTML = `<span class="success">✅ Base de données connectée et fonctionnelle</span>`;
+                } else {
+                    statusElement.innerHTML = `<span class="warning">⚠️ Problème avec la base de données</span>
+                        <p>Message: ${data.error || 'Erreur inconnue'}</p>`;
+                }
+            } catch (error) {
+                statusElement.innerHTML = `<span class="error">❌ Impossible de vérifier la base de données</span>
+                    <p>Erreur: ${error.message}</p>`;
+            }
+        }
+        
+        // Utilitaire pour récupérer l'URL de l'API
+        function getApiUrl() {
+            return import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            getSystemInfo();
+            checkApiStatus();
+            checkWhatsappStatus();
+            checkEnvironmentVariables();
+            checkDatabaseStatus();
+        });
+    </script>
+</body>
+</html> 
