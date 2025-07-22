@@ -7,4 +7,7 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.js',
   },
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:5001')
+  },
 })

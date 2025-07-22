@@ -13,7 +13,17 @@ export default function WhatsLandStatus() {
   useEffect(() => {
     // Fonction pour créer une nouvelle connexion socket
     const createSocket = () => {
-      const newSocket = io(BACKEND_URL, { transports: ['polling'] });
+      // Updated socket configuration with proper options
+      const newSocket = io(BACKEND_URL, { 
+        transports: ['polling'],
+        withCredentials: false, // Disable sending cookies
+        extraHeaders: {
+          "Access-Control-Allow-Origin": "*"
+        },
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000
+      });
+      
       setSocket(newSocket);
       return newSocket;
     };
@@ -102,6 +112,12 @@ export default function WhatsLandStatus() {
     socket.on('disconnect', () => {
       setStatus('disconnected');
       setStatusMessage('Connexion au serveur perdue. Tentative de reconnexion...');
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setStatus('error');
+      setStatusMessage(`Erreur de connexion: ${error.message}`);
     });
 
     // Nettoyage à la destruction du composant

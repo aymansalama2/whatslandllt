@@ -22,7 +22,11 @@ sequelize.query('PRAGMA foreign_keys = OFF;')
   .catch(err => console.error('Erreur lors de la désactivation des contraintes:', err));
 
 const app = express();
-app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "*",
+  methods: ["GET", "POST"],
+  credentials: false
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -852,7 +856,11 @@ app.get('/api/campaigns/:id', async (req, res) => {
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" },
+    cors: { 
+      origin: "*", 
+      methods: ["GET", "POST"],
+      credentials: false 
+    },
     transports: ['polling']
 });
 
