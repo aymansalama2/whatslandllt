@@ -281,6 +281,22 @@ export default function WhatsLandStatus() {
             Réessayer
           </button>
         )}
+        {status === 'disconnected' && (
+  <button 
+    onClick={() => {
+      fetch(`${API_URL}/api/reset-whatsapp`, { 
+        method: 'POST' 
+      });
+      setStatusMessage('Réinitialisation de WhatsApp en cours...');
+    }}
+    className="mt-4 w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md flex items-center justify-center"
+  >
+    <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    Réinitialiser WhatsApp
+  </button>
+)}
       </div>
     </div>
   );

@@ -912,7 +912,151 @@ client.on('auth_failure', (msg) => {
     io.emit('auth_failure', msg);
 });
 
+// Fonction pour tuer tous les processus Chrome
+async function killChromiumProcesses() {
+  try {
+    const { exec } = require('child_process');
+    return new Promise((resolve, reject) => {
+      // Commande pour tuer tous les processus chrome sur Linux
+      exec('pkill -f chrome', (error) => {
+        // Ignorer l'erreur car pkill retourne une erreur si aucun processus n'est trouvé
+        console.log('Tentative de tuer tous les processus Chrome');
+        resolve();
+      });
+    });
+  } catch (error) {
+    console.error('Erreur lors de la tentative de tuer les processus Chrome:', error);
+  }
+}
 
+// Fonction pour nettoyer le répertoire de session
+async function cleanSessionDirectory() {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const sessionDir = path.join(__dirname, '.wwebjs_auth');
+    
+    if (fs.existsSync(sessionDir)) {
+      console.log('Suppression du répertoire de session WhatsApp');
+      await fs.promises.rm(sessionDir, { recursive: true, force: true });
+      console.log('Répertoire de session supprimé avec succès');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la suppression du répertoire de session:', error);
+  }
+}
+
+// Fonction pour réinitialiser complètement WhatsApp
+async function fullWhatsAppReset() {
+  try {
+    whatsappReady = false;
+    whatsappAuthenticated = false;
+    lastQrCode = null;
+    
+    // Informer le frontend que la réinitialisation est en cours
+    io.emit('status_update', {
+      status: 'resetting',
+      message: 'Réinitialisation complète de WhatsApp en cours...'
+    });
+    
+    // Détruire l'instance client actuelle
+    if (client) {
+      try {
+        await client.destroy();
+        console.log('Client WhatsApp détruit');
+      } catch (err) {
+        console.log('Erreur lors de la destruction du client:', err);
+      }
+    }
+    
+    // Tuer tous les processus Chrome
+    await killChromiumProcesses();
+    
+    // Nettoyer le répertoire de session
+    await cleanSessionDirectory();
+    
+    // Attendre un peu avant de créer un nouveau client
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Créer un nouveau client
+    client = new Client({
+      authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
+      puppeteer: {
+        executablePath: process.env.CHROME_PATH || undefined,
+        headless: true,
+        ignoreHTTPSErrors: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu'
+        ]
+      }
+    });
+    
+    // Configurer les événements
+    client.on('qr', async (qr) => {
+      console.log('Nouveau QR Code généré!');
+      lastQrCode = await qrcode.toDataURL(qr);
+      io.emit('qr', lastQrCode);
+    });
+    
+    client.on('ready', () => {
+      console.log('✅ WhatsApp est prêt');
+      whatsappReady = true;
+      io.emit('ready');
+    });
+    
+    client.on('authenticated', () => {
+      console.log('🔐 Authentifié');
+      whatsappAuthenticated = true;
+      io.emit('authenticated');
+    });
+    
+    client.on('auth_failure', (msg) => {
+      console.log('❌ Auth échouée', msg);
+      io.emit('auth_failure', msg);
+    });
+    
+    client.on('disconnected', (reason) => {
+      console.log('🔌 Déconnecté de WhatsApp:', reason);
+      whatsappReady = false;
+      whatsappAuthenticated = false;
+      io.emit('disconnected', { reason });
+      
+      // Déclencher une réinitialisation complète après déconnexion
+      setTimeout(() => {
+        fullWhatsAppReset();
+      }, 1000);
+    });
+    
+    // Initialiser le nouveau client
+    console.log('Initialisation d\'un nouveau client WhatsApp');
+    await client.initialize();
+    
+    io.emit('status_update', {
+      status: 'waiting_qr',
+      message: 'En attente d\'un nouveau QR code...'
+    });
+    
+  } catch (error) {
+    console.error('Erreur lors de la réinitialisation complète:', error);
+    io.emit('error', { message: 'Erreur lors de la réinitialisation de WhatsApp' });
+  }
+}
+
+// Ajouter une route API pour forcer la réinitialisation
+app.post('/api/reset-whatsapp', async (req, res) => {
+  try {
+    fullWhatsAppReset();
+    res.json({ success: true, message: 'Réinitialisation de WhatsApp démarrée' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // Initialisation de WhatsApp
 console.log('🚀 Initialisation de WhatsApp Web...');
