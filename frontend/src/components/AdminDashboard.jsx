@@ -17,7 +17,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}/api/phone-stats`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`}`}/api/phone-stats`);
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
       }
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
   const exportToExcel = async () => {
     try {
       setExporting(true);
-      window.location.href = `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}/api/export-phone-numbers`;
+      window.location.href = `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`}`}/api/export-phone-numbers`;
       setTimeout(() => {
         setExporting(false);
       }, 2000);

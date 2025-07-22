@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import io from 'socket.io-client';
-
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL, SOCKET_CONFIG } from '../config/apiConfig';
 
 export default function WhatsLandStatus() {
   const [qrCode, setQrCode] = useState('');
@@ -14,15 +13,7 @@ export default function WhatsLandStatus() {
     // Fonction pour créer une nouvelle connexion socket
     const createSocket = () => {
       // Updated socket configuration with proper options
-      const newSocket = io(BACKEND_URL, { 
-        transports: ['polling'],
-        withCredentials: false, // Disable sending cookies
-        extraHeaders: {
-          "Access-Control-Allow-Origin": "*"
-        },
-        reconnectionAttempts: 5,
-        reconnectionDelay: 2000
-      });
+      const newSocket = io(API_URL, SOCKET_CONFIG);
       
       setSocket(newSocket);
       return newSocket;
@@ -37,7 +28,7 @@ export default function WhatsLandStatus() {
       setStatusMessage('Connexion à WhatsLand en cours...');
       
       // Vérifier l'état actuel du serveur
-      fetch(`${BACKEND_URL}/api/status`)
+      fetch(`${API_URL}/api/status`)
         .then(response => response.json())
         .then(data => {
           if (data.whatsappReady) {
@@ -45,7 +36,7 @@ export default function WhatsLandStatus() {
             setStatusMessage('WhatsLand est connecté et prêt!');
           } else if (data.qrAvailable) {
             // Si le QR code est déjà disponible, le récupérer
-            fetch(`${BACKEND_URL}/api/qrcode`)
+            fetch(`${API_URL}/api/qrcode`)
               .then(res => res.json())
               .then(qrData => {
                 if (qrData.qrcode) {
@@ -132,7 +123,7 @@ export default function WhatsLandStatus() {
 
     if (status === 'disconnected' || status === 'initializing') {
       checkInterval = setInterval(() => {
-        fetch(`${BACKEND_URL}/api/qrcode`)
+        fetch(`${API_URL}/api/qrcode`)
           .then(res => res.json())
           .then(data => {
             if (data.qrcode) {

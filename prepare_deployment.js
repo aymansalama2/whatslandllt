@@ -25,7 +25,7 @@ try {
     // Créer le fichier .env.production
     fs.writeFileSync(
       path.join(FRONTEND_DIR, '.env.production'),
-      'VITE_API_URL=https://votre-domaine.com'
+      'VITE_API_URL=http://92.113.31.157:5001'
     );
     console.log('✅ Frontend: .env.production créé');
   }

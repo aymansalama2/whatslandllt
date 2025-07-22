@@ -9,13 +9,7 @@ if (dbType === 'sqlite') {
   sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: path.join(__dirname, 'database.sqlite'),
-    logging: false,
-    dialectOptions: {
-      // Désactiver explicitement les contraintes de clé étrangère dans SQLite
-      pragmas: {
-        'foreign_keys': 'OFF'  // Désactiver les contraintes de clé étrangère
-      }
-    }
+    logging: false
   });
 } else {
   sequelize = new Sequelize(
@@ -34,21 +28,5 @@ if (dbType === 'sqlite') {
     }
   );
 }
-
-// Désactiver explicitement les contraintes de clé étrangère après la connexion
-sequelize.afterConnect((connection) => {
-  if (dbType === 'sqlite') {
-    return new Promise((resolve, reject) => {
-      connection.run('PRAGMA foreign_keys = OFF;', (err) => {
-        if (err) {
-          console.error('Erreur lors de la désactivation des contraintes de clé étrangère:', err);
-          return reject(err);
-        }
-        console.log('Contraintes de clé étrangère désactivées avec succès');
-        resolve();
-      });
-    });
-  }
-});
 
 module.exports = sequelize;

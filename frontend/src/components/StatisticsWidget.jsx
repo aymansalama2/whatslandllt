@@ -24,7 +24,7 @@ export default function StatisticsWidget() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        const API_URL = import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`;
         const response = await fetch(`${API_URL}/api/stats${currentUser ? `?uid=${currentUser.uid}` : ''}`);
         
         if (!response.ok) {

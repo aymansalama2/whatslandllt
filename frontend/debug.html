@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Debug</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Socket.IO Connection Test</h1>
+  <div id="status">Connecting...</div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusEl = document.getElementById('status');
+      const socket = io('http://localhost:5001', {
+        transports: ['polling'],
+        withCredentials: false,
+        extraHeaders: {
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+      
+      socket.on('connect', () => {
+        statusEl.innerHTML = 'Connected successfully!';
+        statusEl.style.color = 'green';
+        console.log('Connected to server');
+      });
+      
+      socket.on('connect_error', (error) => {
+        statusEl.innerHTML = `Connection error: ${error.message}`;
+        statusEl.style.color = 'red';
+        console.error('Connection error:', error);
+      });
+      
+      socket.on('disconnect', () => {
+        statusEl.innerHTML = 'Disconnected from server';
+        statusEl.style.color = 'orange';
+        console.log('Disconnected from server');
+      });
+    });
+  </script>
+</body>
+</html> 

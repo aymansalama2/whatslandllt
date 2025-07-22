@@ -21,7 +21,7 @@ export default function Dashboard() {
     // Get basic stats from API
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/status`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`}/api/status`);
         const data = await response.json();
         // Additional stats could be fetched here in a real implementation
       } catch (error) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 
-const BACKEND_URL = `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`;
+const BACKEND_URL = `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`}`}`;
 
 export default function MessageSender({ whatsappReady }) {
   const { userData, isProfileComplete } = useUser();
