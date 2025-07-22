@@ -80,8 +80,8 @@ export default function WhatsLandStatus() {
     });
 
     socket.on('disconnected', (data) => {
-      setStatus('disconnected');
-      setStatusMessage(`WhatsLand a été déconnecté${data?.reason ? ` (${data.reason})` : ''}. En attente d'un nouveau QR code...`);
+      setStatus('initializing');
+      setStatusMessage(`WhatsApp déconnecté. Génération d'un nouveau QR code...`);
       setQrCode(''); // Effacer l'ancien QR code
       
       // Incrémenter le compteur de reconnexion pour déclencher une vérification
@@ -89,9 +89,11 @@ export default function WhatsLandStatus() {
     });
 
     socket.on('status_update', (data) => {
-      if (data.status === 'initializing') {
-        setStatus('initializing');
-        setStatusMessage(data.message || 'WhatsLand se réinitialise...');
+      if (data.status) {
+        setStatus(data.status);
+      }
+      if (data.message) {
+        setStatusMessage(data.message);
       }
     });
 

@@ -921,120 +921,73 @@ console.log('🚀 Initialisation de WhatsApp Web...');
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
-// Trouver et remplacer la fonction handleDisconnect par une version améliorée qui gère mieux la reconnexion
+// Remplacez votre fonction handleDisconnect actuelle par celle-ci:
 async function handleDisconnect(reason) {
   console.log('🔌 Déconnecté de WhatsApp:', reason);
   whatsappReady = false;
   whatsappAuthenticated = false;
+  
+  // Informer le frontend
   io.emit('disconnected', { reason });
   
-  // Indiquer à l'interface qu'une déconnexion s'est produite
-  io.emit('status_update', {
-    status: 'disconnected',
-    message: 'WhatsApp a été déconnecté. Un nouveau QR code sera généré.'
-  });
+  // Attendre un peu pour éviter les conflits
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
   try {
-    // Nettoyer les sessions existantes
-    const sessionFolderPath = path.join(__dirname, '.wwebjs_auth', 'session');
-    if (fs.existsSync(sessionFolderPath)) {
-      // Ne pas supprimer le dossier entier mais seulement certains fichiers
-      const sessionFiles = fs.readdirSync(sessionFolderPath);
-      for (const file of sessionFiles) {
-        // Ne pas essayer de supprimer les fichiers qui pourraient être verrouillés
-        if (!file.endsWith('.log') && !file.includes('Crashpad') && !file.includes('Lock')) {
-          try {
-            const filePath = path.join(sessionFolderPath, file);
-            fs.unlinkSync(filePath);
-          } catch (err) {
-            console.log(`Impossible de supprimer le fichier ${file}:`, err.message);
-          }
-        }
-      }
-      console.log('✅ Nettoyage partiel de la session effectué');
+    // Destruction propre du client
+    if (client) {
+      await client.destroy();
     }
     
-    // Attendre 5 secondes avant d'initialiser une nouvelle instance
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    // Réinitialiser le QR code
-    lastQrCode = null;
-    
-    // Créer un nouvel objet client WhatsApp avec des paramètres propres
-    client.destroy();
-    
-    // Utiliser setTimeout pour que le code s'exécute après que cette fonction soit terminée
-    setTimeout(() => {
-      try {
-        const newClient = new Client({
-          authStrategy: new LocalAuth({ clientId: 'whatsland-' + Date.now() }),
-          puppeteer: {
-            executablePath: process.env.CHROME_PATH || undefined,
-            headless: true,
-            ignoreHTTPSErrors: true,
-            args: [
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-accelerated-2d-canvas',
-              '--no-first-run',
-              '--no-zygote',
-              '--disable-gpu'
-            ]
-          }
-        });
-        
-        // Configurer les gestionnaires d'événements pour le nouveau client
-        newClient.on('qr', async (qr) => {
-          console.log('Nouveau QR Code reçu!');
-          lastQrCode = await qrcode.toDataURL(qr);
-          whatsappReady = false;
-          io.emit('qr', lastQrCode);
-        });
-        
-        newClient.on('ready', () => {
-          console.log('✅ WhatsApp est prêt');
-          whatsappReady = true;
-          whatsappAuthenticated = true;
-          lastQrCode = null;
-          io.emit('ready');
-        });
-        
-        newClient.on('authenticated', () => {
-          console.log('🔐 Authentifié');
-          whatsappAuthenticated = true;
-          io.emit('authenticated');
-        });
-        
-        newClient.on('auth_failure', (msg) => {
-          console.log('❌ Auth échouée', msg);
-          whatsappAuthenticated = false;
-          whatsappReady = false;
-          io.emit('auth_failure', msg);
-        });
-        
-        newClient.on('disconnected', handleDisconnect);
-        
-        // Initialiser le client
-        global.client = newClient;
-        client = newClient;
-        newClient.initialize();
-        console.log('🔄 Nouvelle instance WhatsApp initialisée');
-        
-        // Informer les utilisateurs qu'un nouveau QR code sera bientôt disponible
-        io.emit('status_update', {
-          status: 'initializing',
-          message: 'WhatsApp se réinitialise, un nouveau QR code sera bientôt disponible.'
-        });
-      } catch (error) {
-        console.error('Erreur lors de la création d\'une nouvelle instance WhatsApp:', error);
-        io.emit('error', { message: 'Impossible de créer une nouvelle instance WhatsApp. Veuillez rafraîchir la page.' });
+    // Créer un nouveau client avec un ID unique
+    client = new Client({
+      authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
+      puppeteer: {
+        // Gardez vos options puppeteer existantes
+        executablePath: process.env.CHROME_PATH || undefined,
+        headless: true,
+        // autres options...
       }
-    }, 2000);
+    });
+    
+    // Relier les événements du client
+    client.on('qr', async (qr) => {
+      console.log('Nouveau QR Code généré!');
+      lastQrCode = await qrcode.toDataURL(qr);
+      io.emit('qr', lastQrCode);
+    });
+    
+    client.on('ready', () => {
+      whatsappReady = true;
+      io.emit('ready');
+    });
+    
+    client.on('authenticated', () => {
+      whatsappAuthenticated = true;
+      io.emit('authenticated');
+    });
+    
+    client.on('auth_failure', (msg) => {
+      whatsappAuthenticated = false;
+      io.emit('auth_failure', msg);
+    });
+    
+    client.on('disconnected', handleDisconnect);
+    
+    // Initialiser le nouveau client
+    client.initialize().catch(err => {
+      console.error('Erreur lors de l\'initialisation du client:', err);
+      io.emit('error', { message: 'Erreur lors de l\'initialisation de WhatsApp' });
+    });
+    
+    io.emit('status_update', {
+      status: 'initializing',
+      message: 'Génération d\'un nouveau QR code en cours...'
+    });
     
   } catch (error) {
-    console.error('Erreur lors de la gestion de la déconnexion:', error);
-    io.emit('error', { message: 'Une erreur est survenue lors de la reconnexion. Veuillez rafraîchir la page.' });
+    console.error('Erreur lors de la réinitialisation:', error);
+    io.emit('error', { message: 'Erreur lors de la réinitialisation de WhatsApp' });
   }
 }
 
