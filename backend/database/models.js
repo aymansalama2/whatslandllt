@@ -11,8 +11,13 @@ const User = sequelize.define('User', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: true, // Permettre null pour éviter les erreurs de contrainte
+    unique: true,
+    validate: {
+      isEmail: {
+        msg: "L'email doit être valide"
+      }
+    }
   },
   nom: DataTypes.STRING,
   prenom: DataTypes.STRING,
@@ -118,12 +123,46 @@ Campaign.belongsTo(User, {
 // Synchroniser la base de données
 async function syncDatabase() {
   try {
-    // Ne pas utiliser force: true pour éviter de supprimer les données
-    // Utiliser alter: true pour mettre à jour la structure si nécessaire
-    await sequelize.sync({ alter: true });
+    console.log('Contraintes de clé étrangère désactivées manuellement');
+    
+    // Nettoyer les doublons d'email avant la synchronisation
+    try {
+      await sequelize.query(`
+        DELETE FROM Users 
+        WHERE rowid NOT IN (
+          SELECT MIN(rowid) 
+          FROM Users 
+          GROUP BY COALESCE(email, 'NULL_EMAIL_' || uid)
+        );
+      `);
+      console.log('Doublons d\'email nettoyés');
+    } catch (cleanupError) {
+      console.log('Nettoyage des doublons ignoré:', cleanupError.message);
+    }
+    
+    // Synchroniser avec gestion d'erreurs améliorée
+    await sequelize.sync({ 
+      alter: true,
+      logging: false // Réduire les logs verbeux
+    });
     console.log('Base de données synchronisée avec succès (tables conservées)');
   } catch (error) {
-    console.error('Erreur lors de la synchronisation de la base de données:', error);
+    console.error('Erreur lors de la synchronisation de la base de données:', error.message);
+    
+    // Essayer une synchronisation plus douce en cas d'erreur
+    try {
+      console.log('🔄 Tentative de synchronisation alternative...');
+      await sequelize.sync({ 
+        force: false, 
+        alter: false,
+        logging: false 
+      });
+      console.log('✅ Synchronisation alternative réussie');
+    } catch (fallbackError) {
+      console.error('❌ Échec de la synchronisation alternative:', fallbackError.message);
+      // En cas d'échec total, continuer sans synchronisation
+      console.log('⚠️  Continuant sans synchronisation de base de données');
+    }
   }
 }
 

@@ -1265,8 +1265,10 @@ client.on('disconnected', handleDisconnect);
 
 // Démarrage du serveur
 const PORT = process.env.PORT || 5001;
-server.listen(PORT, () => {
-    console.log(`🚀 Backend lancé sur http://localhost:${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0'; // Écouter sur toutes les interfaces
+server.listen(PORT, HOST, () => {
+    console.log(`🚀 Backend lancé sur http://${HOST}:${PORT}`);
+    console.log(`📡 Serveur accessible depuis l'extérieur sur le port ${PORT}`);
 });
 
 // Ajout d'un gestionnaire pour les arrêts gracieux
