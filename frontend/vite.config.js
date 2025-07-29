@@ -8,6 +8,7 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:5001')
+    // Utiliser la variable d'environnement ou localhost par défaut en dev
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:5001')
   },
 })
