@@ -1,131 +1,195 @@
 import { useState, useEffect } from 'react';
-import io from 'socket.io-client';
-import { API_URL, SOCKET_CONFIG } from '../config/apiConfig';
+import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
+import { 
+  FiCheck, 
+  FiX, 
+  FiWifi, 
+  FiWifiOff, 
+  FiRefreshCw, 
+  FiSmartphone, 
+  FiSquare, 
+  FiClock, 
+  FiAlertCircle, 
+  FiCheckCircle, 
+  FiLoader, 
+  FiZap, 
+  FiSettings,
+  FiInfo
+} from 'react-icons/fi';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function WhatsLandStatus() {
-  const [qrCode, setQrCode] = useState('');
   const [status, setStatus] = useState('loading');
-  const [statusMessage, setStatusMessage] = useState('Connexion en cours...');
-  const [socket, setSocket] = useState(null);
-  const [reconnectCounter, setReconnectCounter] = useState(0);
+  const [statusMessage, setStatusMessage] = useState('Vérification du statut...');
+  const [qrCode, setQrCode] = useState('');
+  const [connectionTime, setConnectionTime] = useState(null);
 
   useEffect(() => {
-    // Fonction pour créer une nouvelle connexion socket
-    const createSocket = () => {
-      // Updated socket configuration with proper options
-      const newSocket = io(API_URL, SOCKET_CONFIG);
-      
-      setSocket(newSocket);
-      return newSocket;
-    };
-
-    // Initialiser le socket
-    const socket = createSocket();
+    checkStatus();
     
-    // Gérer les événements socket
-    socket.on('connect', () => {
-      setStatus('connecting');
-      setStatusMessage('Connexion à WhatsLand en cours...');
-      
-      // Vérifier l'état actuel du serveur
-      fetch(`${API_URL}/api/status`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.whatsappReady) {
-            setStatus('connected');
-            setStatusMessage('WhatsLand est connecté et prêt!');
-          } else if (data.qrAvailable) {
-            // Si le QR code est déjà disponible, le récupérer
-            fetch(`${API_URL}/api/qrcode`)
-              .then(res => res.json())
-              .then(qrData => {
-                if (qrData.qrcode) {
-                  setQrCode(qrData.qrcode);
-                  setStatus('qr');
-                  setStatusMessage('Scannez ce QR code avec WhatsApp sur votre téléphone');
-                }
-              })
-              .catch(() => {
-                setStatus('waiting');
-                setStatusMessage('En attente du QR code...');
-              });
-          }
-        })
-        .catch(() => {
-          setStatus('error');
-          setStatusMessage('Impossible de se connecter au serveur');
-        });
+    // Configuration Socket.IO
+    const socket = io(API_URL, {
+      transports: ['polling'],
+      withCredentials: false,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      timeout: 10000
     });
 
-    socket.on('qr', (qr) => {
-      setQrCode(qr);
+    // Listeners Socket.IO pour la réactivité en temps réel
+    socket.on('qr', (qrCode) => {
+      console.log('✅ Nouveau QR Code reçu via Socket.IO');
+      setQrCode(qrCode);
       setStatus('qr');
-      setStatusMessage('Scannez ce QR code avec WhatsApp sur votre téléphone');
+      setStatusMessage('Nouveau QR code disponible. Scannez-le avec WhatsApp sur votre téléphone');
     });
 
     socket.on('ready', () => {
-      setQrCode('');
+      console.log('✅ WhatsApp connecté via Socket.IO');
       setStatus('connected');
-      setStatusMessage('WhatsLand est connecté et prêt!');
+      setStatusMessage('WhatsApp Web est connecté et opérationnel');
+      setConnectionTime(new Date().toLocaleTimeString());
+      setQrCode('');
     });
 
     socket.on('authenticated', () => {
-      setStatus('authenticated');
-      setStatusMessage('Authentification réussie. Chargement de vos données...');
-    });
-
-    socket.on('auth_failure', (msg) => {
-      setStatus('error');
-      setStatusMessage(`Erreur d'authentification: ${msg?.error || 'Impossible de se connecter'}`);
+      console.log('✅ WhatsApp authentifié via Socket.IO');
+      setStatus('connected');
+      setStatusMessage('WhatsApp Web est authentifié et prêt');
     });
 
     socket.on('disconnected', (data) => {
-      setStatus('initializing');
-      setStatusMessage(`WhatsApp déconnecté. Génération d'un nouveau QR code...`);
-      setQrCode(''); // Effacer l'ancien QR code
-      
-      // Incrémenter le compteur de reconnexion pour déclencher une vérification
-      setReconnectCounter(prev => prev + 1);
+      console.log('❌ WhatsApp déconnecté via Socket.IO:', data);
+      setStatus('disconnected');
+      setStatusMessage('Connexion perdue avec WhatsApp Web');
+      setQrCode('');
+    });
+
+    socket.on('error', (error) => {
+      console.error('❌ Erreur Socket.IO:', error);
+      setStatus('error');
+      setStatusMessage(error.message || 'Erreur de connexion');
     });
 
     socket.on('status_update', (data) => {
-      if (data.status) {
-        setStatus(data.status);
+      console.log('📡 Mise à jour du statut:', data);
+      if (data.status === 'initializing') {
+        setStatus('initializing');
+        setStatusMessage(data.message || 'Initialisation en cours...');
+      } else if (data.status === 'resetting') {
+        setStatus('initializing');
+        setStatusMessage(data.message || 'Réinitialisation en cours...');
+      } else if (data.status === 'reconnecting') {
+        setStatus('connecting');
+        setStatusMessage(data.message || 'Reconnexion en cours...');
       }
-      if (data.message) {
-        setStatusMessage(data.message);
-      }
     });
 
-    socket.on('error', (data) => {
-      setStatus('error');
-      setStatusMessage(data.message || 'Une erreur est survenue');
-    });
+    // Fallback avec polling HTTP (au cas où Socket.IO échoue)
+    const interval = setInterval(checkStatus, 10000); // Réduit à 10 secondes car Socket.IO gère le temps réel
 
-    socket.on('disconnect', () => {
-      setStatus('disconnected');
-      setStatusMessage('Connexion au serveur perdue. Tentative de reconnexion...');
-    });
-
-    socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-      setStatus('error');
-      setStatusMessage(`Erreur de connexion: ${error.message}`);
-    });
-
-    // Nettoyage à la destruction du composant
     return () => {
+      clearInterval(interval);
       socket.disconnect();
     };
-  }, [reconnectCounter]); // Recréer la connexion si reconnectCounter change
+  }, []);
 
-  // Effet pour vérifier périodiquement si un nouveau QR code est disponible après déconnexion
+  const checkStatus = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/status`);
+      const data = await response.json();
+      
+      if (data.whatsappReady) {
+        setStatus('connected');
+        setStatusMessage('WhatsApp Web est connecté et opérationnel');
+        setConnectionTime(new Date().toLocaleTimeString());
+        setQrCode('');
+      } else if (data.qrcode) {
+        setStatus('qr');
+        setStatusMessage('Scannez le QR code avec votre téléphone WhatsApp');
+        setQrCode(data.qrcode);
+      } else if (data.error) {
+        setStatus('error');
+        setStatusMessage(data.error);
+        setQrCode('');
+      } else {
+        setStatus('disconnected');
+        setStatusMessage('WhatsApp Web n\'est pas connecté');
+        setQrCode('');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut:', error);
+      setStatus('error');
+      setStatusMessage('Erreur de connexion au serveur');
+      setQrCode('');
+    }
+  };
+
+  const handleReconnect = async () => {
+    setStatus('connecting');
+    setStatusMessage('Reconnexion en cours...');
+    try {
+      const response = await fetch(`${API_URL}/api/reconnect`, { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        console.log('✅ Reconnexion démarrée:', result.message);
+        setStatusMessage('Reconnexion démarrée avec succès...');
+        setTimeout(checkStatus, 3000);
+      } else {
+        throw new Error(result.message || 'Erreur lors de la reconnexion');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la reconnexion:', error);
+      setStatus('error');
+      setStatusMessage(`Erreur lors de la reconnexion: ${error.message}`);
+    }
+  };
+
+  const handleReset = async () => {
+    setStatus('initializing');
+    setStatusMessage('Réinitialisation complète en cours...');
+    try {
+      const response = await fetch(`${API_URL}/api/reset`, { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        console.log('✅ Réinitialisation démarrée:', result.message);
+        setStatusMessage('Réinitialisation complète démarrée...');
+        setTimeout(checkStatus, 5000); // Plus de temps pour la réinitialisation complète
+      } else {
+        throw new Error(result.message || 'Erreur lors de la réinitialisation');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la réinitialisation:', error);
+      setStatus('error');
+      setStatusMessage(`Erreur lors de la réinitialisation: ${error.message}`);
+    }
+  };
+
+  // Attendre automatiquement un nouveau QR code
   useEffect(() => {
     let checkInterval;
-
-    if (status === 'disconnected' || status === 'initializing') {
+    
+    if (status === 'qr' && !qrCode) {
+      setStatusMessage('Génération du QR code en cours...');
+      
       checkInterval = setInterval(() => {
-        fetch(`${API_URL}/api/qrcode`)
+        fetch(`${API_URL}/api/status`)
           .then(res => res.json())
           .then(data => {
             if (data.qrcode) {
@@ -151,153 +215,411 @@ export default function WhatsLandStatus() {
     switch (status) {
       case 'connected':
       case 'authenticated':
-        return (
-          <svg className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        );
+        return FiCheckCircle;
       case 'error':
       case 'disconnected':
-        return (
-          <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        );
+        return FiWifiOff;
       case 'qr':
-        return (
-          <svg className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-          </svg>
-        );
+        return FiSquare;
+      case 'connecting':
+      case 'initializing':
+        return FiLoader;
       default:
-        return (
-          <svg className="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
+        return FiClock;
     }
   };
 
-  const getStatusColors = () => {
+  const getStatusConfig = () => {
     switch (status) {
       case 'connected':
       case 'authenticated':
-        return 'bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 text-green-800';
+        return {
+          color: 'green',
+          bgGradient: 'from-green-500 via-green-600 to-emerald-700',
+          cardBg: 'from-green-50 to-emerald-50',
+          borderColor: 'border-green-200',
+          textColor: 'text-green-800',
+          iconColor: 'text-green-600',
+          pulseColor: 'bg-green-400'
+        };
       case 'error':
       case 'disconnected':
-        return 'bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 text-red-800';
+        return {
+          color: 'red',
+          bgGradient: 'from-red-500 via-red-600 to-rose-700',
+          cardBg: 'from-red-50 to-rose-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-800',
+          iconColor: 'text-red-600',
+          pulseColor: 'bg-red-400'
+        };
       case 'qr':
-        return 'bg-gradient-to-r from-blue-50 to-sky-50 border-l-4 border-blue-500 text-blue-800';
+        return {
+          color: 'blue',
+          bgGradient: 'from-blue-500 via-blue-600 to-indigo-700',
+          cardBg: 'from-blue-50 to-indigo-50',
+          borderColor: 'border-blue-200',
+          textColor: 'text-blue-800',
+          iconColor: 'text-blue-600',
+          pulseColor: 'bg-blue-400'
+        };
       default:
-        return 'bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-500 text-yellow-800';
+        return {
+          color: 'yellow',
+          bgGradient: 'from-yellow-500 via-yellow-600 to-orange-700',
+          cardBg: 'from-yellow-50 to-orange-50',
+          borderColor: 'border-yellow-200',
+          textColor: 'text-yellow-800',
+          iconColor: 'text-yellow-600',
+          pulseColor: 'bg-yellow-400'
+        };
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  const statusConfig = getStatusConfig();
+  const StatusIcon = getStatusIcon();
+
   return (
-    <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 text-white">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Statut de WhatsLand</h2>
-          <div className={`h-3 w-3 rounded-full ${
-            status === 'connected' || status === 'authenticated' 
-              ? 'bg-green-300 animate-pulse' 
-              : status === 'error' || status === 'disconnected'
-                ? 'bg-red-300'
-                : 'bg-yellow-300 animate-pulse'
-          }`}></div>
-        </div>
-      </div>
-      
-      <div className="p-6">
-        <div className={`mb-6 p-4 rounded-lg flex items-start ${getStatusColors()}`}>
-          <div className="mr-3 mt-0.5">
-            {getStatusIcon()}
-          </div>
-          <div>
-            <p className="font-medium">{statusMessage}</p>
-          </div>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-4 sm:space-y-6 lg:space-y-8"
+    >
+      {/* Header Card - Responsive */}
+      <motion.div
+        variants={itemVariants}
+        className={`relative bg-gradient-to-br ${statusConfig.bgGradient} rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 overflow-hidden shadow-2xl`}
+      >
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-64 lg:h-64 bg-white rounded-full transform translate-x-16 sm:translate-x-24 lg:translate-x-32 -translate-y-16 sm:-translate-y-24 lg:-translate-y-32"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-36 sm:h-36 lg:w-48 lg:h-48 bg-white rounded-full transform -translate-x-12 sm:-translate-x-18 lg:-translate-x-24 translate-y-12 sm:translate-y-18 lg:translate-y-24"></div>
         </div>
 
-        {qrCode && (
-          <div className="mb-6 flex justify-center">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg blur opacity-50 group-hover:opacity-75 transition duration-300"></div>
-              <div className="relative p-1 bg-white rounded-lg flex">
-                <img src={qrCode} alt="QR Code WhatsLand" className="w-64 h-64" />
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left space-y-4 sm:space-y-0 sm:space-x-6">
+            <div className="relative">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl">
+                <StatusIcon className="text-white" size={window.innerWidth < 640 ? 28 : window.innerWidth < 1024 ? 32 : 36} />
               </div>
+              {/* Status indicator pulse */}
+              <div className={`absolute -top-1 -right-1 w-6 h-6 ${statusConfig.pulseColor} rounded-full animate-pulse`}></div>
+            </div>
+            
+            <div className="space-y-1 sm:space-y-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Statut WhatsLand</h1>
+              <p className="text-sm sm:text-base lg:text-lg text-white/90 max-w-md">
+                {statusMessage}
+              </p>
+              {connectionTime && (
+                <p className="text-xs sm:text-sm text-white/70">
+                  Connecté à {connectionTime}
+                </p>
+              )}
             </div>
           </div>
-        )}
 
-        {(status === 'disconnected' || status === 'initializing') && !qrCode && (
-          <div className="flex justify-center items-center mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-green-500"></div>
-            <span className="ml-3 text-gray-600 font-medium">Génération d'un nouveau QR code en cours...</span>
+          {/* Status indicator - Hidden on mobile to save space */}
+          <div className="hidden sm:flex items-center space-x-3">
+            <div className={`w-3 h-3 lg:w-4 lg:h-4 ${statusConfig.pulseColor} rounded-full animate-pulse`}></div>
+            <span className="text-white/90 text-sm lg:text-base font-medium">
+              {status === 'connected' ? 'En ligne' : 
+               status === 'qr' ? 'QR Code' : 
+               status === 'error' ? 'Erreur' : 'Hors ligne'}
+            </span>
           </div>
-        )}
-
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Instructions</h3>
-          {status === 'connected' ? (
-            <div className="flex items-center text-green-600">
-              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <p>Vous pouvez maintenant envoyer des messages.</p>
-            </div>
-          ) : status === 'qr' ? (
-            <div className="space-y-2">
-              <div className="flex items-start">
-                <div className="bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs mr-2 mt-0.5">1</div>
-                <p>Ouvrez WhatsApp sur votre téléphone</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs mr-2 mt-0.5">2</div>
-                <p>Appuyez sur Menu ou Paramètres et sélectionnez WhatsApp Web</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs mr-2 mt-0.5">3</div>
-                <p>Pointez votre téléphone vers cet écran pour scanner le QR code</p>
-              </div>
-            </div>
-          ) : status === 'disconnected' ? (
-            <div className="flex items-center text-orange-600">
-              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <p>L'application a été déconnectée. Un nouveau QR code sera bientôt généré.</p>
-            </div>
-          ) : null}
         </div>
+      </motion.div>
 
-        {status === 'error' && (
-          <button 
-            onClick={() => setReconnectCounter(prev => prev + 1)}
-            className="mt-4 w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md flex items-center justify-center"
+      {/* Status Details Card - Responsive */}
+      <motion.div
+        variants={itemVariants}
+        className={`bg-gradient-to-br ${statusConfig.cardBg} rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border ${statusConfig.borderColor} shadow-xl`}
+      >
+        <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
+          <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-lg border-2 ${statusConfig.borderColor}`}>
+            <StatusIcon className={statusConfig.iconColor} size={window.innerWidth < 640 ? 24 : 28} />
+          </div>
+          
+          <div className="text-center sm:text-left flex-1">
+            <h3 className={`text-lg sm:text-xl lg:text-2xl font-bold ${statusConfig.textColor} mb-1 sm:mb-2`}>
+              État de la connexion
+            </h3>
+            <p className={`${statusConfig.textColor} opacity-80 text-sm sm:text-base`}>
+              {statusMessage}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Instructions Section - Responsive */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={status}
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 shadow-xl border border-white/30"
+        >
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 lg:mb-6 flex items-center">
+            <FiInfo className="mr-2 sm:mr-3 text-blue-600" size={window.innerWidth < 640 ? 20 : 24} />
+            Instructions
+          </h3>
+
+          {status === 'connected' && (
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <FiCheck className="text-green-600" size={window.innerWidth < 640 ? 14 : 16} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">WhatsApp connecté</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Vous pouvez maintenant envoyer des messages via l'onglet "Envoi de messages".
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <FiZap className="text-blue-600" size={window.innerWidth < 640 ? 14 : 16} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Prêt à l'emploi</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Toutes les fonctionnalités sont disponibles.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {status === 'qr' && (
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-blue-600 font-bold text-xs sm:text-sm">1</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Ouvrez WhatsApp sur votre téléphone</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Lancez l'application WhatsApp sur votre smartphone.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-blue-600 font-bold text-xs sm:text-sm">2</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Accédez aux appareils liés</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Tapez sur Menu (⋮) puis "Appareils liés".
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-blue-600 font-bold text-xs sm:text-sm">3</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Scannez le QR code</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Tapez sur "Lier un appareil" et scannez le QR code ci-dessous.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(status === 'disconnected' || status === 'error') && (
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <FiAlertCircle className="text-red-600" size={window.innerWidth < 640 ? 14 : 16} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Connexion perdue</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    La connexion avec WhatsApp Web a été interrompue.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <FiRefreshCw className="text-yellow-600" size={window.innerWidth < 640 ? 14 : 16} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Action requise</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Cliquez sur "Réessayer" ou "Réinitialiser" pour rétablir la connexion.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {status === 'loading' && (
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <FiLoader className="text-yellow-600 animate-spin" size={window.innerWidth < 640 ? 14 : 16} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Vérification en cours</h4>
+                  <p className="text-gray-600 text-xs sm:text-sm mt-1">
+                    Nous vérifions l'état de la connexion WhatsApp...
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* QR Code Section - Responsive */}
+      {qrCode && (
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 shadow-xl border border-white/30"
+        >
+          <div className="text-center">
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 lg:mb-6 flex items-center justify-center">
+              <FiSquare className="mr-2 sm:mr-3 text-blue-600" size={window.innerWidth < 640 ? 20 : 24} />
+              QR Code WhatsApp
+            </h3>
+            
+            <div className="relative inline-block">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="relative bg-white p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200"
+              >
+                <img 
+                  src={qrCode} 
+                  alt="QR Code WhatsApp" 
+                  className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 mx-auto"
+                />
+                
+                {/* Small zap icon */}
+                <div className="absolute top-1 sm:top-2 right-1 sm:right-2 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                  <FiZap className="text-white" size={window.innerWidth < 640 ? 12 : 16} />
+                </div>
+              </motion.div>
+            </div>
+            
+            <p className="text-gray-600 text-xs sm:text-sm mt-3 sm:mt-4 max-w-md mx-auto">
+              ⚠️ Ce QR code expire après quelques minutes. Si la connexion échoue, actualisez la page.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Loading state for QR generation - Responsive */}
+      {status === 'qr' && !qrCode && (
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 shadow-xl border border-white/30"
+        >
+          <div className="text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <FiLoader className="text-blue-600 animate-spin" size={window.innerWidth < 640 ? 28 : window.innerWidth < 1024 ? 32 : 36} />
+            </div>
+            
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-2 sm:mb-3">
+              Génération du QR Code
+            </h3>
+            <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">
+              Veuillez patienter pendant la génération du QR code...
+            </p>
+            
+            {/* Progress bar */}
+            <div className="w-full max-w-xs sm:max-w-sm mx-auto bg-gray-200 rounded-full h-2">
+              <motion.div 
+                className="bg-blue-500 h-2 rounded-full"
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Action Buttons - Responsive */}
+      {(status === 'error' || status === 'disconnected') && (
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+        >
+          <motion.button
+            onClick={handleReconnect}
+            disabled={status === 'connecting'}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 sm:space-x-3"
+            whileHover={{ scale: status !== 'connecting' ? 1.02 : 1 }}
+            whileTap={{ scale: status !== 'connecting' ? 0.98 : 1 }}
           >
-            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Réessayer
-          </button>
-        )}
-        {status === 'disconnected' && (
-  <button 
-    onClick={() => {
-      fetch(`${API_URL}/api/reset-whatsapp`, { 
-        method: 'POST' 
-      });
-      setStatusMessage('Réinitialisation de WhatsApp en cours...');
-    }}
-    className="mt-4 w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md flex items-center justify-center"
-  >
-    <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
-    Réinitialiser WhatsApp
-  </button>
-)}
-      </div>
-    </div>
+            <FiRefreshCw className={status === 'connecting' ? 'animate-spin' : ''} size={window.innerWidth < 640 ? 16 : 20} />
+            <span className="text-sm sm:text-base">
+              {status === 'connecting' ? 'Reconnexion...' : 'Réessayer'}
+            </span>
+          </motion.button>
+          
+          <motion.button
+            onClick={handleReset}
+            disabled={status === 'initializing'}
+            className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 sm:space-x-3"
+            whileHover={{ scale: status !== 'initializing' ? 1.02 : 1 }}
+            whileTap={{ scale: status !== 'initializing' ? 0.98 : 1 }}
+          >
+            <FiSettings className={status === 'initializing' ? 'animate-spin' : ''} size={window.innerWidth < 640 ? 16 : 20} />
+            <span className="text-sm sm:text-base">
+              {status === 'initializing' ? 'Réinitialisation...' : 'Réinitialiser'}
+            </span>
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Bouton Vérifier la connexion pour les autres états */}
+      {(status === 'loading' || (status !== 'connected' && status !== 'qr' && status !== 'error' && status !== 'disconnected' && status !== 'connecting' && status !== 'initializing')) && (
+        <motion.div
+          variants={itemVariants}
+          className="flex justify-center"
+        >
+          <motion.button
+            onClick={checkStatus}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 sm:space-x-3"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <FiRefreshCw size={window.innerWidth < 640 ? 16 : 20} />
+            <span className="text-sm sm:text-base">
+              Vérifier la connexion
+            </span>
+          </motion.button>
+        </motion.div>
+      )}
+    </motion.div>
   );
 } 

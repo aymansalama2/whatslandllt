@@ -21,6 +21,7 @@ const analytics = getAnalytics(app);
 const database = getDatabase(app);
 
 // Admin email
-export const ADMIN_EMAIL = "ayman@gmail.com";
+export const ADMIN_EMAILS = [ "houssnijob@gmail.com"];
+export const SUPER_ADMIN_EMAIL = "ayman@gmail.com";
 
 export { app, auth, analytics, database }; 

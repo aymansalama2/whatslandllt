@@ -51,12 +51,15 @@ const fileFilter = (req, file, cb) => {
   const messageType = req.body.messageType;
   
   if (messageType === 'video') {
-    // Types MIME acceptés pour les vidéos
-    const allowedMimes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv'];
+    // Types MIME acceptés pour les vidéos (optimisé avec plus de formats)
+    const allowedMimes = [
+      'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv',
+      'video/webm', 'video/3gpp', 'video/x-flv', 'video/mpeg'
+    ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Type de fichier vidéo non supporté. Utilisez MP4, MOV, AVI ou WMV.'), false);
+      cb(new Error('Type de fichier vidéo non supporté. Utilisez MP4, MOV, AVI, WMV, WebM, 3GP, FLV ou MPEG.'), false);
     }
   } else if (messageType === 'image') {
     // Types MIME acceptés pour les images
@@ -94,12 +97,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configuration de multer avec limites de taille
+// Configuration de multer avec limites de taille optimisées
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 16 * 1024 * 1024, // 16MB max pour les fichiers
+    fileSize: 64 * 1024 * 1024, // 64MB max pour les fichiers (augmenté de 16MB)
     files: 1 // Un seul fichier à la fois
   }
 });
@@ -109,15 +112,26 @@ let lastQrCode = null;
 let whatsappReady = false;
 let whatsappAuthenticated = false;
 
+// Cache optimisé pour les vérifications de numéros (améliore la vitesse)
+const numberVerificationCache = new Map();
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
 // Route pour tester si le serveur est accessible et fournir l'état de WhatsApp
 app.get('/api/status', (req, res) => {
-    res.json({ 
+    const response = { 
         status: 'ok', 
         message: 'Server is running',
         whatsappReady: whatsappReady,
         whatsappAuthenticated: whatsappAuthenticated,
         qrAvailable: !!lastQrCode
-    });
+    };
+    
+    // Inclure le QR code si disponible
+    if (lastQrCode && !whatsappReady) {
+        response.qrcode = lastQrCode;
+    }
+    
+    res.json(response);
 });
 
 // Route pour obtenir le QR code directement via HTTP (plus fiable)
@@ -139,7 +153,7 @@ app.get('/api/qrcode', async (req, res) => {
     }
 });
 
-// Fonction pour vérifier si un contact existe et obtenir son ID
+// Fonction optimisée pour vérifier si un contact existe et obtenir son ID
 async function getNumberId(number) {
     try {
         let cleanNumber = number.replace(/[^\d]/g, '');
@@ -150,7 +164,22 @@ async function getNumberId(number) {
             cleanNumber = '212' + cleanNumber;
         }
         
-        return await client.getNumberId(cleanNumber);
+        // Vérifier le cache pour optimiser la vitesse
+        const cacheKey = cleanNumber;
+        const cached = numberVerificationCache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp) < CACHE_EXPIRY) {
+            return cached.result;
+        }
+        
+        const result = await client.getNumberId(cleanNumber);
+        
+        // Mettre en cache le résultat
+        numberVerificationCache.set(cacheKey, {
+            result: result,
+            timestamp: Date.now()
+        });
+        
+        return result;
     } catch (error) {
         console.error('Erreur lors de la vérification du numéro:', error);
         return null;
@@ -170,8 +199,8 @@ async function sendMessageWithRetry(chatId, messageData, retryCount = 0) {
 
         // Première tentative
         try {
-      // Attendre un court instant avant d'envoyer le message
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Attendre un court instant optimisé avant d'envoyer le message
+      await new Promise(resolve => setTimeout(resolve, 100));
             console.log(`Tentative d'envoi à ${chatId}`);
             
             // Vérifier si le chat existe
@@ -194,9 +223,9 @@ async function sendMessageWithRetry(chatId, messageData, retryCount = 0) {
                         const stats = fs.statSync(mediaPath);
                         const fileSizeInMB = stats.size / (1024 * 1024);
                         
-                        // Vérifier la taille du fichier
-                        if (fileSizeInMB > 15) {
-                            throw new Error('La vidéo est trop grande (max 15MB)');
+                        // Vérifier la taille du fichier - limite augmentée
+                        if (fileSizeInMB > 64) {
+                            throw new Error('La vidéo est trop grande (max 64MB)');
                         }
 
                         // Créer le média avec les métadonnées appropriées
@@ -243,8 +272,8 @@ async function sendMessageWithRetry(chatId, messageData, retryCount = 0) {
                 throw new Error(`Nombre maximum de tentatives atteint: ${firstError.message}`);
             }
 
-            // Attendre avant la prochaine tentative (temps d'attente croissant)
-            await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 5000));
+            // Attendre avant la prochaine tentative (optimisé pour la vitesse)
+            await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
 
             // Deuxième tentative avec vérification de l'ID
             const numberDetails = await getNumberId(chatId.replace('@c.us', ''));
@@ -390,12 +419,13 @@ app.get('/api/stats', async (req, res) => {
       recent_campaigns: Number(recentStats[0]?.recent_campaigns || 0)
     };
     
-    res.json({ 
-      success: true,
-      globalStats: globalStatsProcessed,
-      recentStats: recentStatsProcessed,
-      recentCampaigns
-    });
+    // Combiner toutes les statistiques dans un seul objet plat
+    const combinedStats = {
+      ...globalStatsProcessed,
+      ...recentStatsProcessed
+    };
+    
+    res.json(combinedStats);
     
   } catch (error) {
     console.error('Erreur lors de la récupération des statistiques:', error);
@@ -421,15 +451,10 @@ app.get('/api/phone-stats', async (req, res) => {
     console.log(`Found ${stats.length} phone records${niche ? ` for niche: ${niche}` : ''}`);
     
     const formattedStats = stats.map(stat => ({
-      id: stat.id,
-      number: stat.number,
+      phone_number: stat.number,
+      success_count: stat.successfulDeliveries || 0,
+      total_count: stat.messagesSent || 0,
       niche: stat.niche || 'Non spécifié',
-      messagesSent: stat.messagesSent,
-      successfulDeliveries: stat.successfulDeliveries || 0,
-      failedDeliveries: stat.failedDeliveries || 0,
-      successRate: stat.messagesSent > 0 
-        ? Math.round((stat.successfulDeliveries / stat.messagesSent) * 100)
-        : 0,
       lastUsed: stat.lastUsed,
       lastMessageStatus: stat.lastMessageStatus
     }));
@@ -645,11 +670,11 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
       const fileStats = fs.statSync(req.file.path);
       const fileSizeInMB = fileStats.size / (1024 * 1024);
       
-      if (fileSizeInMB > 16) {
+      if (fileSizeInMB > 64) {
         fs.unlinkSync(req.file.path);
         return res.status(400).json({
           success: false,
-          message: 'La vidéo est trop volumineuse. La taille maximale est de 16 MB.'
+          message: 'La vidéo est trop volumineuse. La taille maximale est de 64 MB.'
         });
       }
     }
@@ -740,8 +765,8 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
           message: sendResult.message || sendResult.error
         });
           
-        // Attendre 0,5 seconde entre chaque message, quel que soit le type
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Attendre 100ms entre chaque message pour optimiser la vitesse (objectif: 1s total)
+        await new Promise(resolve => setTimeout(resolve, 100));
         
       } catch (error) {
         console.error(`Erreur lors de l'envoi à ${originalNumber}:`, error);
@@ -777,8 +802,8 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
       results,
       campaignId: campaign.id,
       note: messageType === 'video' ? 
-        "Note: L'envoi de vidéos peut prendre plus de temps. Si un message n'a pas été délivré, vérifiez le format de la vidéo (MP4 recommandé) et sa taille (max 16MB)" :
-        "Note: Si un message n'a pas été délivré, le numéro est peut-être invalide ou inactif sur WhatsApp"
+        "Note: L'envoi de vidéos optimisé (max 64MB). Format MP4 recommandé pour une vitesse optimale." :
+        "Note: Envoi optimisé à ~1s par message. Si un message échoue, le numéro est peut-être invalide."
     });
     
   } catch (error) {
@@ -864,7 +889,7 @@ const io = new Server(server, {
     transports: ['polling']
 });
 
-const client = new Client({
+let client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         executablePath: process.env.CHROME_PATH || undefined, // Si non défini, utilise la version bundled
@@ -1048,7 +1073,95 @@ async function fullWhatsAppReset() {
   }
 }
 
-// Ajouter une route API pour forcer la réinitialisation
+// Route API pour la reconnexion (réinitialisation légère)
+app.post('/api/reconnect', async (req, res) => {
+  try {
+    console.log('🔄 Demande de reconnexion reçue');
+    
+    // Réinitialiser les variables d'état
+    whatsappReady = false;
+    whatsappAuthenticated = false;
+    lastQrCode = null;
+    
+    // Informer le frontend
+    io.emit('status_update', {
+      status: 'reconnecting',
+      message: 'Tentative de reconnexion en cours...'
+    });
+    
+    // Essayer de réinitialiser le client
+    if (client) {
+      try {
+        await client.initialize();
+      } catch (err) {
+        console.log('Erreur lors de la réinitialisation, destruction du client:', err);
+        await client.destroy();
+        
+        // Créer un nouveau client
+        client = new Client({
+          authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
+          puppeteer: {
+            executablePath: process.env.CHROME_PATH || undefined,
+            headless: true,
+            ignoreHTTPSErrors: true,
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--disable-gpu'
+            ]
+          }
+        });
+        
+        // Reconfigurer les événements
+        client.on('qr', async (qr) => {
+          console.log('QR Code reçu!');
+          lastQrCode = await qrcode.toDataURL(qr);
+          whatsappReady = false;
+          io.emit('qr', lastQrCode);
+        });
+        
+        client.on('ready', () => {
+          console.log('✅ WhatsApp est prêt');
+          whatsappReady = true;
+          lastQrCode = null;
+          io.emit('ready');
+        });
+        
+        client.on('authenticated', () => {
+          console.log('🔐 Authentifié');
+          whatsappAuthenticated = true;
+          io.emit('authenticated');
+        });
+        
+        client.on('disconnected', handleDisconnect);
+        
+        await client.initialize();
+      }
+    }
+    
+    res.json({ success: true, message: 'Reconnexion démarrée' });
+  } catch (error) {
+    console.error('Erreur lors de la reconnexion:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Route API pour la réinitialisation complète
+app.post('/api/reset', async (req, res) => {
+  try {
+    console.log('🔄 Demande de réinitialisation complète reçue');
+    fullWhatsAppReset();
+    res.json({ success: true, message: 'Réinitialisation complète de WhatsApp démarrée' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Ajouter une route API pour forcer la réinitialisation (compatibilité)
 app.post('/api/reset-whatsapp', async (req, res) => {
   try {
     fullWhatsAppReset();
@@ -1180,3 +1293,55 @@ process.on('SIGINT', async function() {
     process.exit(1);
   }
 });
+
+// Gestionnaires d'erreurs globaux pour éviter les crashes
+process.on('uncaughtException', (error) => {
+  console.error('❌ Erreur non capturée:', error);
+  console.error('Stack trace:', error.stack);
+  
+  // Notifier le frontend de l'erreur
+  if (io) {
+    io.emit('error', { 
+      message: 'Une erreur inattendue s\'est produite', 
+      details: error.message 
+    });
+  }
+  
+  // Essayer de relancer WhatsApp au lieu de faire crash le serveur
+  setTimeout(() => {
+    console.log('🔄 Tentative de redémarrage de WhatsApp...');
+    if (client && client.destroy) {
+      client.destroy().then(() => {
+        console.log('Client détruit avec succès');
+        // Réinitialiser les variables d'état
+        whatsappReady = false;
+        whatsappAuthenticated = false;
+        lastQrCode = null;
+      }).catch((err) => {
+        console.error('Erreur lors de la destruction du client:', err);
+      });
+    }
+  }, 2000);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Promesse rejetée non gérée:', reason);
+  console.error('Promesse:', promise);
+  
+  // Notifier le frontend de l'erreur
+  if (io) {
+    io.emit('error', { 
+      message: 'Une erreur de promesse s\'est produite', 
+      details: reason 
+    });
+  }
+});
+
+// Gestionnaire pour les erreurs de Socket.IO
+if (io) {
+  io.on('error', (error) => {
+    console.error('❌ Erreur Socket.IO:', error);
+  });
+}
+
+console.log('🛡️  Gestionnaires d\'erreurs globaux activés');

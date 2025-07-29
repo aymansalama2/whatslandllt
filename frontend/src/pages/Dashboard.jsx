@@ -1,224 +1,345 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import WhatsLandStatus from '../components/WhatsLandStatus';
 import MessageSender from '../components/MessageSender';
 import UserProfile from '../components/UserProfile';
 import AdminDashboard from '../components/AdminDashboard';
 import StatisticsWidget from '../components/StatisticsWidget';
+import DashboardOverview from '../components/DashboardOverview';
+import Sidebar from '../components/Sidebar';
+import TopBar from '../components/TopBar';
 import { useUser } from '../contexts/UserContext';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL } from '../config/apiConfig';
 
 export default function Dashboard() {
-  const { isAdmin, isProfileComplete, userData } = useUser();
+  const { isAdmin, isSuperAdmin, isProfileComplete, userData } = useUser();
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('status');
-  const [stats, setStats] = useState({
-    messagesSent: 0,
-    phoneNumbers: 0,
-    lastSent: null
-  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [whatsappReady, setWhatsappReady] = useState(false);
 
+  // Listen to sidebar collapse state
   useEffect(() => {
-    // Get basic stats from API
-    const fetchStats = async () => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Check WhatsApp status
+  useEffect(() => {
+    const checkWhatsAppStatus = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`}/api/status`);
+        const response = await fetch(`${API_URL}/api/status`);
         const data = await response.json();
-        // Additional stats could be fetched here in a real implementation
+        console.log('WhatsApp Status:', data); // Debug log
+        setWhatsappReady(data.whatsappReady || false);
       } catch (error) {
-        console.error("Erreur lors de la récupération des statistiques:", error);
+        console.error('Erreur lors de la vérification du statut WhatsApp:', error);
+        setWhatsappReady(false);
       }
     };
 
-    fetchStats();
+    checkWhatsAppStatus();
+    
+    // Vérifier le statut toutes les 5 secondes
+    const interval = setInterval(checkWhatsAppStatus, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
-  const renderTabs = () => {
-    const tabs = [
-      { id: 'status', label: 'Statut WhatsLand', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-      { id: 'statistics', label: 'Statistiques', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-      { id: 'profile', label: 'Mon Profil', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' }
-    ];
-
-    if (isProfileComplete()) {
-      tabs.push({ 
-        id: 'messaging', 
-        label: 'Envoi de messages', 
-        icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' 
-      });
-    }
-
-    if (isAdmin) {
-      tabs.push({ 
-        id: 'admin', 
-        label: 'Administration',
-        icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
-      });
-    }
-
-    return (
-      <div className="flex mb-6 space-x-3 bg-white p-3 rounded-xl shadow-md overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-3 rounded-xl transition-all duration-300 flex items-center space-x-2 ${
-              activeTab === tab.id
-                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105'
-                : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:scale-103'
-            }`}
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
-            </svg>
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
-    );
-  };
-
-  const renderDashboardHeader = () => {
-    return (
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Welcome Card */}
-        <div className="bg-gradient-to-br from-green-500 to-green-700 text-white rounded-xl p-6 shadow-xl col-span-2 relative overflow-hidden">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-green-400 opacity-20"></div>
-          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-white opacity-10"></div>
-          <h2 className="text-2xl font-bold relative z-10">Bienvenue, {userData?.prenom || currentUser?.email?.split('@')[0] || 'Utilisateur'} !</h2>
-          <p className="mt-2 opacity-90 relative z-10">Utilisez cette plateforme pour votre connectivité sans frontières</p>
-          
-          <div className="mt-4 flex flex-wrap gap-2 relative z-10">
-            {isProfileComplete() ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-200 text-green-800">
-                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Profil complet
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-200 text-yellow-800"
-                onClick={() => setActiveTab('profile')}
-                style={{cursor: 'pointer'}}>
-                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                Profil incomplet
-              </span>
-            )}
-            
-            {isAdmin && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-200 text-blue-800">
-                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Administrateur
-              </span>
-            )}
-            
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-200 text-blue-800">
-              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-              </svg>
-              {userData?.niche || "Niche non spécifiée"}
-            </span>
-          </div>
-        </div>
-        
-        {/* Stats Card */}
-        <div className="bg-white rounded-xl shadow-md p-6 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-500"></div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Aperçu rapide</h3>
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <p className="text-sm text-gray-500">Date</p>
-              <p className="text-xl font-bold text-gray-800">
-                {new Date().toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'})}
-              </p>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <p className="text-sm text-gray-500">Heure</p>
-              <div className="flex items-center">
-                <p className="text-xl font-bold text-gray-800">
-                  {new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}
-                </p>
-                <div className="ml-2 h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderContent = () => {
+    const contentVariants = {
+      hidden: { opacity: 0, y: 20 },
+      visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: { duration: 0.4, ease: "easeOut" }
+      }
+    };
+
     switch (activeTab) {
       case 'status':
         return (
-          <>
-            {renderDashboardHeader()}
+          <motion.div
+            key="status"
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+          >
             <WhatsLandStatus />
-          </>
+          </motion.div>
         );
       case 'statistics':
         return (
-          <>
-            {renderDashboardHeader()}
-            <StatisticsWidget />
-          </>
+          <motion.div
+            key="statistics"
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <DashboardOverview />
+          </motion.div>
         );
       case 'profile':
-        return <UserProfile />;
+        return (
+          <motion.div
+            key="profile"
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <UserProfile />
+          </motion.div>
+        );
       case 'messaging':
         if (!isProfileComplete()) {
           return (
-            <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-500 text-yellow-700 p-6 rounded-xl shadow-md">
-              <div className="flex items-center">
-                <svg className="h-8 w-8 mr-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div>
-                  <p className="font-bold text-lg">Profil incomplet</p>
-                  <p>Veuillez compléter votre profil avant d'envoyer des messages.</p>
-                  <button 
-                    onClick={() => setActiveTab('profile')} 
-                    className="mt-3 px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-lg hover:from-yellow-600 hover:to-amber-700 transition-colors shadow-md"
-                  >
-                    Compléter mon profil
-                  </button>
+            <motion.div
+              key="messaging-blocked"
+              variants={contentVariants}
+              initial="hidden"
+              animate="visible"
+              className="bg-white rounded-2xl shadow-lg p-8"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                 </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Profil incomplet
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Veuillez compléter votre profil avant d'accéder à la messagerie.
+                </p>
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium"
+                >
+                  Compléter mon profil
+                </button>
               </div>
-            </div>
+            </motion.div>
           );
         }
-        return <MessageSender whatsappReady={true} />;
+        return (
+          <motion.div
+            key="messaging"
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <MessageSender whatsappReady={whatsappReady} />
+          </motion.div>
+        );
       case 'admin':
         if (!isAdmin) {
           return (
-            <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 text-red-700 p-6 rounded-xl shadow-md">
-              <div className="flex items-center">
-                <svg className="h-8 w-8 mr-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div>
-                  <p className="font-bold text-lg">Accès refusé</p>
-                  <p>Vous n'avez pas les droits d'accès à cette section administrative.</p>
+            <motion.div
+              key="admin-blocked"
+              variants={contentVariants}
+              initial="hidden"
+              animate="visible"
+              className="bg-white rounded-2xl shadow-lg p-8"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
                 </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Accès restreint
+                </h3>
+                <p className="text-gray-600">
+                  Vous n'avez pas les permissions nécessaires pour accéder à cette section.
+                </p>
               </div>
-            </div>
+            </motion.div>
           );
         }
-        return <AdminDashboard />;
+        return (
+          <motion.div
+            key="admin"
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <AdminDashboard />
+          </motion.div>
+        );
       default:
-        return null;
+        return (
+          <motion.div
+            key="default"
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <WhatsLandStatus />
+          </motion.div>
+        );
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl">
-      {renderTabs()}
-      <div className="transition-all duration-300">
-        {renderContent()}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-blue-50">
+      {/* Background Pattern */}
+      <div className="fixed inset-0 z-0">
+        <div 
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: "60px 60px"
+          }}
+        />
       </div>
+
+      {/* Sidebar */}
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        onCollapseChange={setSidebarCollapsed}
+      />
+
+      {/* Top Bar */}
+      <TopBar 
+        activeTab={activeTab} 
+        sidebarCollapsed={sidebarCollapsed}
+      />
+
+      {/* Main Content */}
+      <motion.main
+        className="transition-all duration-300 pt-20 pb-8 px-4 md:px-6"
+        style={{
+          marginLeft: sidebarCollapsed ? '80px' : '280px'
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-7xl mx-auto">
+          {/* Welcome Section */}
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/30 relative overflow-hidden">
+              {/* Decorative background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-200/20 to-emerald-200/20 rounded-full transform translate-x-16 -translate-y-16"></div>
+              
+              <div className="relative z-10 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    Bonjour, {userData?.prenom || currentUser?.displayName || 'Utilisateur'} 👋
+                  </h2>
+                  <p className="text-gray-600">
+                    Bienvenue sur votre tableau de bord WhatsLand. Gérez vos campagnes et suivez vos performances.
+                  </p>
+                </div>
+                <div className="hidden lg:block">
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg relative">
+                    <div className="absolute inset-0 bg-white/20 rounded-2xl animate-pulse"></div>
+                    <svg className="w-10 h-10 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* WhatsApp Status Card */}
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <div className={`bg-white/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border relative overflow-hidden ${
+              whatsappReady 
+                ? 'border-green-200/50 bg-gradient-to-br from-green-50/30 to-emerald-50/30' 
+                : 'border-red-200/50 bg-gradient-to-br from-red-50/30 to-orange-50/30'
+            }`}>
+              {/* Status indicator background */}
+              <div className={`absolute top-0 right-0 w-24 h-24 rounded-full transform translate-x-12 -translate-y-12 ${
+                whatsappReady 
+                  ? 'bg-gradient-to-br from-green-300/20 to-emerald-300/20' 
+                  : 'bg-gradient-to-br from-red-300/20 to-orange-300/20'
+              }`}></div>
+              
+              <div className="relative z-10 flex items-center">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
+                  whatsappReady 
+                    ? 'bg-green-100 text-green-600' 
+                    : 'bg-red-100 text-red-600'
+                }`}>
+                  {whatsappReady ? (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Statut de WhatsLand
+                  </h3>
+                  <p className={`text-sm ${whatsappReady ? 'text-green-600' : 'text-red-600'}`}>
+                    {whatsappReady ? 'WhatsLand est connecté et prêt!' : 'WhatsLand n\'est pas connecté'}
+                  </p>
+                </div>
+                {whatsappReady && (
+                  <div className="ml-auto">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  </div>
+                )}
+              </div>
+              
+              {!whatsappReady && (
+                <div className="mt-4 pt-4 border-t border-gray-200/50">
+                  <p className="text-sm text-gray-600 mb-3">
+                    Instructions
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Vous pouvez maintenant envoyer des messages.
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Content based on active tab */}
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative"
+          >
+            {activeTab === 'status' && <WhatsLandStatus />}
+            {activeTab === 'statistics' && <DashboardOverview />}
+            {activeTab === 'profile' && <UserProfile />}
+            {activeTab === 'messaging' && <MessageSender whatsappReady={whatsappReady} />}
+            {activeTab === 'admin' && <AdminDashboard />}
+          </motion.div>
+        </div>
+      </motion.main>
     </div>
   );
 } 
