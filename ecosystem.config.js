@@ -24,7 +24,7 @@ module.exports = {
     {
       name: 'whatslandllt-frontend',
       script: 'serve',
-      args: '-s dist -l 3000',
+      args: '-s dist -l 3000 -H 0.0.0.0',
       cwd: '/var/www/whatslandllt/frontend',
       instances: 1,
       autorestart: true,
