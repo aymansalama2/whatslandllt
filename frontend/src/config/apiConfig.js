@@ -10,14 +10,20 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://92.113.31.157:500
 
 // Socket.IO configuration
 export const SOCKET_CONFIG = {
-  transports: ['polling'],
+  transports: ['websocket', 'polling'],
   withCredentials: false,
   extraHeaders: {
     "Access-Control-Allow-Origin": "*"
   },
-  reconnectionAttempts: 5,
-  reconnectionDelay: 2000,
-  timeout: 10000
+  reconnectionAttempts: 3,
+  reconnectionDelay: 1000,
+  timeout: 5000,
+  forceNew: true,
+  autoConnect: true,
+  upgrade: true,
+  rememberUpgrade: true,
+  pingInterval: 2000,
+  pingTimeout: 5000
 };
 
 export default {
