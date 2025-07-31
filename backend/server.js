@@ -895,36 +895,54 @@ const io = new Server(server, {
 });
 
 let client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        clientId: `whatsland-${Date.now()}`,
+        dataPath: path.join(__dirname, '.wwebjs_auth')
+    }),
     puppeteer: {
-        executablePath: process.env.CHROME_PATH || undefined,
-        headless: true,
+        executablePath: '/usr/bin/chromium-browser',
+        headless: 'new',
         ignoreHTTPSErrors: true,
         protocolTimeout: 30000,
-        defaultViewport: { width: 800, height: 600 }, // Réduction de la taille
-        timeout: 30000, // Réduction du timeout
+        defaultViewport: { width: 800, height: 600 },
+        timeout: 30000,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
             '--disable-gpu',
+            '--disable-software-rasterizer',
             '--disable-extensions',
-            '--disable-component-extensions-with-background-pages',
+            '--disable-default-apps',
+            '--disable-popup-blocking',
+            '--disable-notifications',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-site-isolation-trials',
+            '--no-experiments',
+            '--no-default-browser-check',
+            '--no-first-run',
+            '--disable-infobars',
+            '--disable-translate',
             '--disable-background-timer-throttling',
             '--disable-backgrounding-occluded-windows',
             '--disable-client-side-phishing-detection',
-            '--disable-default-apps',
+            '--disable-component-extensions-with-background-pages',
             '--disable-hang-monitor',
+            '--disable-ipc-flooding-protection',
             '--disable-prompt-on-repost',
-            '--disable-sync',
-            '--disable-translate',
-            '--disable-features=site-per-process',
-            '--js-flags="--max-old-space-size=256"'
+            '--disable-renderer-backgrounding',
+            '--force-color-profile=srgb',
+            '--metrics-recording-only',
+            '--no-first-run',
+            '--password-store=basic',
+            '--use-mock-keychain',
+            '--js-flags="--max-old-space-size=512"'
         ]
-    }
+    },
+    qrMaxRetries: 3,
+    takeoverOnConflict: true,
+    takeoverTimeoutMs: 10000
 });
 
 client.on('qr', async (qr) => {
@@ -958,16 +976,32 @@ client.on('auth_failure', (msg) => {
 async function killChromiumProcesses() {
   try {
     const { exec } = require('child_process');
-    return new Promise((resolve, reject) => {
-      // Commande pour tuer tous les processus chrome sur Linux
-      exec('pkill -f chrome', (error) => {
-        // Ignorer l'erreur car pkill retourne une erreur si aucun processus n'est trouvé
-        console.log('Tentative de tuer tous les processus Chrome');
-        resolve();
-      });
-    });
+    const util = require('util');
+    const execAsync = util.promisify(exec);
+
+    console.log('🔄 Nettoyage des processus Chrome...');
+
+    // Tuer tous les processus Chrome/Chromium
+    const commands = [
+      'pkill -f chrome',
+      'pkill -f chromium',
+      'pkill -f "Google Chrome"',
+      'rm -rf /tmp/.org.chromium.Chromium*',
+      'rm -rf /tmp/.com.google.Chrome*',
+      'rm -rf /tmp/puppeteer_dev_chrome_profile-*'
+    ];
+
+    for (const cmd of commands) {
+      try {
+        await execAsync(cmd);
+      } catch (err) {
+        // Ignorer les erreurs car certaines commandes peuvent échouer si les processus n'existent pas
+      }
+    }
+
+    console.log('✅ Nettoyage des processus Chrome terminé');
   } catch (error) {
-    console.error('Erreur lors de la tentative de tuer les processus Chrome:', error);
+    console.error('❌ Erreur lors du nettoyage des processus Chrome:', error);
   }
 }
 
