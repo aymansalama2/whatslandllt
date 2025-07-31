@@ -1,41 +1,23 @@
 module.exports = {
-  apps: [
-    {
-      name: 'whatslandllt-backend',
-      script: './backend/server.js',
-      cwd: '/var/www/whatslandllt',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '1G',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 5001,
-        HOST: '0.0.0.0'
-      },
-      error_file: '/var/log/pm2/whatslandllt-error.log',
-      out_file: '/var/log/pm2/whatslandllt-out.log',
-      log_file: '/var/log/pm2/whatslandllt-combined.log',
-      time: true,
-      restart_delay: 4000,
-      max_restarts: 10,
-      min_uptime: '30s'
+  apps: [{
+    name: 'whatsland',
+    script: 'backend/server.js',
+    instances: 1,
+    exec_mode: 'fork',
+    watch: false,
+    max_memory_restart: '300M',
+    env: {
+      NODE_ENV: 'production',
+      NODE_OPTIONS: '--max-old-space-size=256'
     },
-    {
-      name: 'whatslandllt-frontend',
-      script: 'serve',
-      args: '-s dist -l 3000 -H 0.0.0.0',
-      cwd: '/var/www/whatslandllt/frontend',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      env: {
-        NODE_ENV: 'production'
-      },
-      error_file: '/var/log/pm2/frontend-error.log',
-      out_file: '/var/log/pm2/frontend-out.log',
-      log_file: '/var/log/pm2/frontend-combined.log',
-      time: true
-    }
-  ]
-}; 
+    merge_logs: true,
+    error_file: 'logs/err.log',
+    out_file: 'logs/out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    node_args: [
+      '--optimize-for-size',
+      '--max-old-space-size=256',
+      '--gc-interval=100'
+    ]
+  }]
+}

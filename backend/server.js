@@ -892,12 +892,12 @@ const io = new Server(server, {
 let client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        executablePath: process.env.CHROME_PATH || undefined, // Si non défini, utilise la version bundled
-        headless: true, // Utiliser 'true' au lieu de "new" pour compatibilité
+        executablePath: process.env.CHROME_PATH || undefined,
+        headless: true,
         ignoreHTTPSErrors: true,
         protocolTimeout: 30000,
-        defaultViewport: { width: 1280, height: 900 },
-        timeout: 60000,
+        defaultViewport: { width: 800, height: 600 }, // Réduction de la taille
+        timeout: 30000, // Réduction du timeout
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -905,7 +905,19 @@ let client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-component-extensions-with-background-pages',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-client-side-phishing-detection',
+            '--disable-default-apps',
+            '--disable-hang-monitor',
+            '--disable-prompt-on-repost',
+            '--disable-sync',
+            '--disable-translate',
+            '--disable-features=site-per-process',
+            '--js-flags="--max-old-space-size=256"'
         ]
     }
 });
