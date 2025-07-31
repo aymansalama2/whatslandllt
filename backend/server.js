@@ -1,4 +1,9 @@
 require('dotenv').config();
+
+// Optimisation des performances Node.js
+process.env.NODE_ENV = 'production';
+process.env.UV_THREADPOOL_SIZE = '1'; // Réduire la taille du pool de threads
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -12,6 +17,9 @@ const { User, PhoneNumber, Campaign, syncDatabase } = require('./database/models
 const sequelize = require('./database/config');
 const { Op } = require('sequelize');
 const ExcelJS = require('exceljs');
+
+// Optimisation de la gestion de la mémoire
+global.gc && global.gc(); // Forcer le garbage collector si disponible
 
 // Synchroniser la base de données au démarrage
 syncDatabase();
@@ -102,8 +110,9 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 64 * 1024 * 1024, // 64MB max pour les fichiers (augmenté de 16MB)
-    files: 1 // Un seul fichier à la fois
+    fileSize: 32 * 1024 * 1024, // 32MB max pour les fichiers (réduit pour économiser la mémoire)
+    files: 1, // Un seul fichier à la fois
+    fieldSize: 10 * 1024 * 1024 // 10MB max pour les champs de formulaire
   }
 });
 
@@ -114,7 +123,17 @@ let whatsappAuthenticated = false;
 
 // Cache optimisé pour les vérifications de numéros (améliore la vitesse)
 const numberVerificationCache = new Map();
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+const CACHE_EXPIRY = 15 * 60 * 1000; // 15 minutes (augmenté pour réduire les vérifications)
+
+// Limiter l'utilisation CPU
+const CPU_THROTTLE_INTERVAL = 100; // ms entre les tâches intensives
+function throttleCPU(fn) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(fn());
+    }, CPU_THROTTLE_INTERVAL);
+  });
+}
 
 // Route pour tester si le serveur est accessible et fournir l'état de WhatsApp
 app.get('/api/status', (req, res) => {
@@ -906,6 +925,11 @@ let client = new Client({
         protocolTimeout: 30000,
         defaultViewport: { width: 800, height: 600 },
         timeout: 30000,
+        pipe: true,
+        dumpio: false,
+        handleSIGINT: true,
+        handleSIGTERM: true,
+        handleSIGHUP: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
