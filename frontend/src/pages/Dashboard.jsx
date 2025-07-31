@@ -39,7 +39,7 @@ export default function Dashboard() {
       try {
         const response = await fetch(`${API_URL}/api/status`);
         const data = await response.json();
-        console.log('WhatsApp Status:', data); // Debug log
+        // Status récupéré avec succès
         setWhatsappReady(data.whatsappReady || false);
       } catch (error) {
         console.error('Erreur lors de la vérification du statut WhatsApp:', error);

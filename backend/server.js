@@ -13,6 +13,9 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 const { User, PhoneNumber, Campaign, syncDatabase } = require('./database/models');
 const sequelize = require('./database/config');
 const { Op } = require('sequelize');
@@ -68,13 +71,119 @@ sequelize.query('PRAGMA foreign_keys = OFF;')
 .catch(err => logger.error('Erreur lors de la désactivation des contraintes:', err));
 
 const app = express();
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || "*",
-  methods: ["GET", "POST"],
-  credentials: false
+
+// ==================== SÉCURITÉ ====================
+
+// Headers de sécurité avec Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "wss:", "https:"]
+    }
+  },
+  crossOriginEmbedderPolicy: false
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting pour les APIs
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limite de 100 requêtes par IP
+  message: {
+    error: 'Trop de requêtes, veuillez réessayer plus tard.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiting spécial pour Firebase APIs
+const firebaseLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 20, // limite de 20 requêtes par IP
+  message: {
+    error: 'Limite de sessions WhatsApp atteinte, veuillez réessayer plus tard.',
+    retryAfter: '5 minutes'
+  }
+});
+
+// CORS sécurisé pour whatsland.click
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://whatsland.click', 'http://whatsland.click', 'http://92.113.31.157:3000']
+    : ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Middleware de parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Appliquer rate limiting aux APIs
+app.use('/api', apiLimiter);
+app.use('/api/firebase', firebaseLimiter);
+
+// ==================== ENDPOINTS DE MONITORING ====================
+
+// Health check endpoint (sans rate limiting)
+app.get('/health', (req, res) => {
+  const healthInfo = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+    },
+    activeUsers: firebaseUserClients.size,
+    whatsappSessions: Array.from(firebaseUserClients.values()).reduce((acc, session) => {
+      acc[session.status] = (acc[session.status] || 0) + 1;
+      return acc;
+    }, {}),
+    version: require('./package.json').version
+  };
+  
+  res.json(healthInfo);
+});
+
+// Endpoint de statut détaillé (admin uniquement)
+app.get('/api/status', verifyFirebaseToken, (req, res) => {
+  // Vérifier si l'utilisateur est admin
+  const adminEmails = ['houssnijob@gmail.com', 'ayman@gmail.com'];
+  if (!adminEmails.includes(req.user.email)) {
+    return res.status(403).json({ 
+      success: false, 
+      error: 'Accès non autorisé' 
+    });
+  }
+
+  const detailedStatus = {
+    server: {
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      cpu: process.cpuUsage()
+    },
+    database: {
+      connected: sequelize.authenticate ? true : false
+    },
+    firebase: {
+      activeClients: firebaseUserClients.size,
+      sessions: Array.from(firebaseUserClients.entries()).map(([uid, session]) => ({
+        uid,
+        status: session.status,
+        email: session.userEmail,
+        lastActivity: session.lastActivity
+      }))
+    }
+  };
+  
+  res.json({ success: true, data: detailedStatus });
+});
 
 // Configuration de multer pour le stockage temporaire des fichiers
 const storage = multer.diskStorage({
@@ -154,29 +263,74 @@ const upload = multer({
   }
 });
 
-// État de l'application (système legacy - sera remplacé par le système Firebase)
-let lastQrCode = null;
-let whatsappReady = false;
-let whatsappAuthenticated = false;
+// ==================== SYSTÈME FIREBASE MULTI-CLIENTS ====================
+// Ancien système supprimé - Utilisation exclusive du système Firebase
 
 // Système multi-clients Firebase
 const firebaseUserClients = new Map(); // firebaseUid -> { client, qrCode, status, userEmail, lastActivity, sessionId }
 
-// Middleware d'authentification Firebase
+// ==================== MIDDLEWARE & VALIDATION ====================
+
+// Validation des entrées
+const validatePhoneNumber = body('phoneNumber')
+  .matches(/^\+?[1-9]\d{1,14}$/)
+  .withMessage('Numéro de téléphone invalide');
+
+const validateMessage = body('message')
+  .isLength({ min: 1, max: 4096 })
+  .withMessage('Message doit contenir entre 1 et 4096 caractères');
+
+// Middleware de validation des erreurs
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array()
+    });
+  }
+  next();
+};
+
+// Middleware d'authentification Firebase sécurisé
 async function verifyFirebaseToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Token manquant ou format invalide' });
+      return res.status(401).json({ 
+        success: false,
+        error: 'Token manquant ou format invalide' 
+      });
     }
     
     const token = authHeader.split('Bearer ')[1];
+    
+    // Validation du format du token
+    if (!token || token.length < 100) {
+      return res.status(401).json({ 
+        success: false,
+        error: 'Token invalide' 
+      });
+    }
+    
     const decodedToken = await firebaseAuth.verifyIdToken(token);
-    req.user = decodedToken; // Contient uid, email, etc.
+    
+    // Vérifications supplémentaires
+    if (!decodedToken.uid || !decodedToken.email) {
+      return res.status(401).json({ 
+        success: false,
+        error: 'Token incomplet' 
+      });
+    }
+    
+    req.user = decodedToken;
     next();
   } catch (error) {
     logger.error('Erreur vérification token Firebase:', error);
-    res.status(401).json({ error: 'Token invalide' });
+    res.status(401).json({ 
+      success: false,
+      error: 'Token invalide ou expiré' 
+    });
   }
 }
 
@@ -1200,9 +1354,11 @@ app.get('/api/campaigns/:id', async (req, res) => {
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { 
-      origin: "*", 
+      origin: process.env.NODE_ENV === 'production' 
+        ? ['https://whatsland.click', 'http://whatsland.click', 'http://92.113.31.157:3000']
+        : ['http://localhost:5173', 'http://localhost:3000'],
       methods: ["GET", "POST"],
-      credentials: false 
+      credentials: true 
     },
     transports: ['polling', 'websocket'],
     pingTimeout: 60000,
@@ -1318,88 +1474,7 @@ io.on('connection', (socket) => {
     });
 });
 
-let client = new Client({
-    authStrategy: new LocalAuth({
-        clientId: `whatsland-${Date.now()}`,
-        dataPath: path.join(__dirname, '.wwebjs_auth')
-    }),
-    puppeteer: {
-        executablePath: process.platform === 'win32' ? undefined : '/usr/bin/chromium-browser',
-        headless: 'new',
-        ignoreHTTPSErrors: true,
-        protocolTimeout: 30000,
-        defaultViewport: { width: 800, height: 600 },
-        timeout: 30000,
-        pipe: true,
-        dumpio: false,
-        handleSIGINT: true,
-        handleSIGTERM: true,
-        handleSIGHUP: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-software-rasterizer',
-            '--disable-extensions',
-            '--disable-default-apps',
-            '--disable-popup-blocking',
-            '--disable-notifications',
-            '--disable-web-security',
-            '--disable-features=IsolateOrigins,site-per-process',
-            '--disable-site-isolation-trials',
-            '--no-experiments',
-            '--no-default-browser-check',
-            '--no-first-run',
-            '--disable-infobars',
-            '--disable-translate',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-client-side-phishing-detection',
-            '--disable-component-extensions-with-background-pages',
-            '--disable-hang-monitor',
-            '--disable-ipc-flooding-protection',
-            '--disable-prompt-on-repost',
-            '--disable-renderer-backgrounding',
-            '--force-color-profile=srgb',
-            '--metrics-recording-only',
-            '--no-first-run',
-            '--password-store=basic',
-            '--use-mock-keychain',
-            '--js-flags="--max-old-space-size=512"'
-        ]
-    },
-    qrMaxRetries: 3,
-    takeoverOnConflict: true,
-    takeoverTimeoutMs: 10000
-});
-
-client.on('qr', async (qr) => {
-    logger.info('QR Code reçu!');
-    lastQrCode = await qrcode.toDataURL(qr);
-    whatsappReady = false;
-    io.emit('qr', lastQrCode);
-});
-
-client.on('ready', () => {
-    logger.info('✅ WhatsApp est prêt');
-    whatsappReady = true;
-    lastQrCode = null;
-    io.emit('ready');
-});
-
-client.on('authenticated', () => {
-    logger.info('🔐 Authentifié');
-    whatsappAuthenticated = true;
-    io.emit('authenticated');
-});
-
-client.on('auth_failure', (msg) => {
-    logger.warn('❌ Auth échouée', msg);
-    whatsappAuthenticated = false;
-    whatsappReady = false;
-    io.emit('auth_failure', msg);
-});
+// ==================== DÉMARRAGE DU SERVEUR ====================
 
 // Fonction pour tuer tous les processus Chrome
 async function killChromiumProcesses() {
@@ -1777,8 +1852,13 @@ app.post('/api/firebase/disconnect', verifyFirebaseToken, async (req, res) => {
     }
 });
 
-// Route pour envoyer un message via Firebase
-app.post('/api/firebase/send-message', verifyFirebaseToken, async (req, res) => {
+// Route pour envoyer un message via Firebase (avec validation)
+app.post('/api/firebase/send-message', 
+  verifyFirebaseToken,
+  validatePhoneNumber,
+  validateMessage,
+  handleValidationErrors,
+  async (req, res) => {
     try {
         const firebaseUid = req.user.uid;
         const { phoneNumber, message } = req.body;
@@ -1787,26 +1867,44 @@ app.post('/api/firebase/send-message', verifyFirebaseToken, async (req, res) => 
         if (!userSession || userSession.status !== 'ready') {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Session WhatsApp non prête' 
+                error: 'Session WhatsApp non prête. Veuillez d\'abord scanner le QR code.' 
             });
         }
         
         const client = userSession.client;
         const chatId = phoneNumber.includes('@') ? phoneNumber : `${phoneNumber}@c.us`;
         
+        // Vérifier si le numéro est valide
+        const isValidNumber = await client.isRegisteredUser(chatId);
+        if (!isValidNumber) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Numéro WhatsApp non valide ou non enregistré' 
+            });
+        }
+        
         await client.sendMessage(chatId, message);
         
-        // Mettre à jour l'activité
+        // Mettre à jour l'activité et les statistiques
         userSession.lastActivity = Date.now();
         await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
-            lastActivity: admin.database.ServerValue.TIMESTAMP
+            lastActivity: admin.database.ServerValue.TIMESTAMP,
+            messagesSent: admin.database.ServerValue.increment(1)
         });
         
-        res.json({ success: true, message: 'Message envoyé' });
+        res.json({ 
+            success: true, 
+            message: 'Message envoyé avec succès',
+            timestamp: new Date().toISOString()
+        });
         
     } catch (error) {
         logger.error('Erreur envoi message Firebase:', error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ 
+            success: false, 
+            error: 'Erreur lors de l\'envoi du message',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 
@@ -2018,4 +2116,38 @@ if (io) {
   });
 }
 
-console.log('🛡️  Gestionnaires d\'erreurs globaux activés');
+// ==================== DÉMARRAGE DU SERVEUR HTTP ====================
+
+const PORT = process.env.PORT || 5001;
+
+server.listen(PORT, '0.0.0.0', () => {
+  logger.info(`🚀 Serveur WhatsLand démarré sur le port ${PORT}`);
+  logger.info(`🌐 URL: https://whatsland.click:${PORT}`);
+  logger.info(`📊 Health Check: https://whatsland.click:${PORT}/health`);
+  logger.info(`🔥 Firebase multi-clients activé`);
+  logger.info(`🛡️ Sécurité renforcée activée`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('🛑 Arrêt gracieux du serveur...');
+  
+  // Fermer toutes les sessions Firebase
+  for (const [firebaseUid, session] of firebaseUserClients.entries()) {
+    try {
+      if (session.client) {
+        await session.client.destroy();
+      }
+    } catch (error) {
+      logger.error(`Erreur fermeture session ${firebaseUid}:`, error);
+    }
+  }
+  
+  // Fermer le serveur
+  server.close(() => {
+    logger.info('✅ Serveur fermé proprement');
+    process.exit(0);
+  });
+});
+
+logger.info('🛡️ Gestionnaires d\'erreurs globaux activés');

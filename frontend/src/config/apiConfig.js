@@ -5,25 +5,23 @@
  * Import this file whenever you need to make API calls or socket connections.
  */
 
-// For development, use localhost. For production, use the environment variable or your server IP address
-export const API_URL = import.meta.env.VITE_API_URL || 'http://92.113.31.157:5001';
+// Configuration pour whatsland.click - Production et développement
+export const API_URL = import.meta.env.VITE_API_URL || 'https://whatsland.click:5001';
 
-// Socket.IO configuration
+// Socket.IO configuration sécurisée
 export const SOCKET_CONFIG = {
   transports: ['websocket', 'polling'],
-  withCredentials: false,
-  extraHeaders: {
-    "Access-Control-Allow-Origin": "*"
-  },
-  reconnectionAttempts: 3,
-  reconnectionDelay: 1000,
-  timeout: 5000,
-  forceNew: true,
+  withCredentials: true, // Activé pour les cookies/sessions
+  secure: import.meta.env.PROD, // HTTPS en production
+  reconnectionAttempts: 5,
+  reconnectionDelay: 2000,
+  timeout: 10000,
+  forceNew: false,
   autoConnect: true,
   upgrade: true,
   rememberUpgrade: true,
-  pingInterval: 2000,
-  pingTimeout: 5000
+  pingInterval: 5000,
+  pingTimeout: 10000
 };
 
 export default {
