@@ -50,18 +50,17 @@ export default function Dashboard() {
     checkWhatsAppStatus();
     
     // Vérifier le statut toutes les 5 secondes
-    const interval = setInterval(checkWhatsAppStatus, 5000);
+    const interval = setInterval(checkWhatsAppStatus, 10000);
     
     return () => clearInterval(interval);
   }, []);
 
   const renderContent = () => {
     const contentVariants = {
-      hidden: { opacity: 0, y: 20 },
+      hidden: { opacity: 0 },
       visible: { 
-        opacity: 1, 
-        y: 0,
-        transition: { duration: 0.4, ease: "easeOut" }
+        opacity: 1,
+        transition: { duration: 0.2 }
       }
     };
 
@@ -218,14 +217,11 @@ export default function Dashboard() {
       />
 
       {/* Main Content */}
-      <motion.main
-        className="transition-all duration-300 pt-20 pb-8 px-4 md:px-6"
+      <main
+        className="transition-all duration-200 pt-20 pb-8 px-4 md:px-6"
         style={{
           marginLeft: sidebarCollapsed ? '80px' : '280px'
         }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
       >
         <div className="max-w-7xl mx-auto">
           {/* Welcome Section */}
@@ -339,7 +335,7 @@ export default function Dashboard() {
             {activeTab === 'admin' && <AdminDashboard />}
           </motion.div>
         </div>
-      </motion.main>
+      </main>
     </div>
   );
 } 
