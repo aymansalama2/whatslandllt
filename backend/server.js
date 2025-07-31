@@ -18,6 +18,9 @@ const sequelize = require('./database/config');
 const { Op } = require('sequelize');
 const ExcelJS = require('exceljs');
 
+// Configuration Firebase Admin
+const { admin, db, auth: firebaseAuth, realtimeDb } = require('./firebase-admin-config');
+
 // Optimisation de la gestion de la mémoire
 global.gc && global.gc(); // Forcer le garbage collector si disponible
 
@@ -151,10 +154,31 @@ const upload = multer({
   }
 });
 
-// État de l'application
+// État de l'application (système legacy - sera remplacé par le système Firebase)
 let lastQrCode = null;
 let whatsappReady = false;
 let whatsappAuthenticated = false;
+
+// Système multi-clients Firebase
+const firebaseUserClients = new Map(); // firebaseUid -> { client, qrCode, status, userEmail, lastActivity, sessionId }
+
+// Middleware d'authentification Firebase
+async function verifyFirebaseToken(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Token manquant ou format invalide' });
+    }
+    
+    const token = authHeader.split('Bearer ')[1];
+    const decodedToken = await firebaseAuth.verifyIdToken(token);
+    req.user = decodedToken; // Contient uid, email, etc.
+    next();
+  } catch (error) {
+    logger.error('Erreur vérification token Firebase:', error);
+    res.status(401).json({ error: 'Token invalide' });
+  }
+}
 
 // Cache optimisé pour les vérifications de numéros (améliore la vitesse)
 const numberVerificationCache = new Map();
@@ -169,6 +193,246 @@ function throttleCPU(fn) {
     }, CPU_THROTTLE_INTERVAL);
   });
 }
+
+// ==================== FONCTIONS FIREBASE MULTI-CLIENTS ====================
+
+// Créer un client WhatsApp pour un utilisateur Firebase
+async function createFirebaseUserClient(firebaseUid, userEmail) {
+    try {
+        // Vérifier si l'utilisateur existe dans Firebase
+        const userRecord = await firebaseAuth.getUser(firebaseUid);
+        
+        const client = new Client({
+            authStrategy: new LocalAuth({ 
+                clientId: `whatsland-firebase-${firebaseUid}`,
+                dataPath: path.join(__dirname, '.wwebjs_auth', 'firebase', firebaseUid)
+            }),
+                    puppeteer: {
+            executablePath: process.platform === 'win32' ? undefined : '/usr/bin/chromium',
+            headless: 'new',
+            ignoreHTTPSErrors: true,
+            protocolTimeout: 30000,
+            defaultViewport: { width: 800, height: 600 },
+            timeout: 30000,
+            pipe: true,
+            dumpio: false,
+            handleSIGINT: true,
+            handleSIGTERM: true,
+            handleSIGHUP: true,
+            args: process.platform === 'win32' ? [
+                '--no-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu'
+            ] : [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-software-rasterizer',
+                    '--disable-extensions',
+                    '--disable-default-apps',
+                    '--disable-popup-blocking',
+                    '--disable-notifications',
+                    '--disable-web-security',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                    '--disable-site-isolation-trials',
+                    '--no-experiments',
+                    '--no-default-browser-check',
+                    '--no-first-run',
+                    '--disable-infobars',
+                    '--disable-translate',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-client-side-phishing-detection',
+                    '--disable-component-extensions-with-background-pages',
+                    '--disable-hang-monitor',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-prompt-on-repost',
+                    '--disable-renderer-backgrounding',
+                    '--force-color-profile=srgb',
+                    '--metrics-recording-only',
+                    '--password-store=basic',
+                    '--use-mock-keychain',
+                    '--js-flags="--max-old-space-size=512"'
+                ]
+            },
+            qrMaxRetries: 3,
+            takeoverOnConflict: true,
+            takeoverTimeoutMs: 10000
+        });
+
+        // Créer le répertoire d'authentification s'il n'existe pas
+        const authDir = path.join(__dirname, '.wwebjs_auth', 'firebase', firebaseUid);
+        if (!fs.existsSync(authDir)) {
+            fs.mkdirSync(authDir, { recursive: true });
+        }
+
+        // Stocker dans la Map
+        firebaseUserClients.set(firebaseUid, {
+            client: client,
+            qrCode: null,
+            status: 'initializing',
+            userEmail: userEmail,
+            lastActivity: Date.now(),
+            sessionId: `whatsland-firebase-${firebaseUid}`
+        });
+
+        // Sauvegarder dans Firebase Realtime Database
+        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).set({
+            sessionId: `whatsland-firebase-${firebaseUid}`,
+            status: 'initializing',
+            userEmail: userEmail,
+            lastActivity: admin.database.ServerValue.TIMESTAMP,
+            createdAt: admin.database.ServerValue.TIMESTAMP,
+            isActive: true
+        });
+
+        logger.info(`Client Firebase créé pour ${firebaseUid} (${userEmail})`);
+        return client;
+    } catch (error) {
+        logger.error('Erreur création client Firebase:', error);
+        throw error;
+    }
+}
+
+// Configurer les événements pour un utilisateur Firebase
+function setupFirebaseClientEvents(firebaseUid, client) {
+    client.on('qr', async (qr) => {
+        try {
+            const qrCode = await qrcode.toDataURL(qr);
+            const userSession = firebaseUserClients.get(firebaseUid);
+            
+            if (userSession) {
+                userSession.qrCode = qrCode;
+                userSession.status = 'waiting_qr';
+                userSession.lastActivity = Date.now();
+                
+                // Mettre à jour Firebase
+                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                    status: 'waiting_qr',
+                    lastActivity: admin.database.ServerValue.TIMESTAMP
+                });
+                
+                // Envoyer le QR code à l'utilisateur spécifique
+                io.to(`firebase-user-${firebaseUid}`).emit('qr', qrCode);
+                logger.info(`QR Code généré pour utilisateur Firebase ${firebaseUid}`);
+            }
+        } catch (error) {
+            logger.error('Erreur QR Firebase:', error);
+        }
+    });
+
+    client.on('ready', async () => {
+        try {
+            const userSession = firebaseUserClients.get(firebaseUid);
+            if (userSession) {
+                userSession.status = 'ready';
+                userSession.qrCode = null;
+                userSession.lastActivity = Date.now();
+                
+                // Obtenir le numéro de téléphone WhatsApp
+                const info = client.info;
+                const phoneNumber = info ? info.wid.user : null;
+                
+                // Mettre à jour Firebase
+                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                    status: 'ready',
+                    phoneNumber: phoneNumber,
+                    lastActivity: admin.database.ServerValue.TIMESTAMP
+                });
+                
+                io.to(`firebase-user-${firebaseUid}`).emit('ready', { phoneNumber });
+                logger.info(`WhatsApp prêt pour utilisateur Firebase ${firebaseUid}`);
+            }
+        } catch (error) {
+            logger.error('Erreur ready Firebase:', error);
+        }
+    });
+
+    client.on('authenticated', async () => {
+        try {
+            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                status: 'authenticated',
+                lastActivity: admin.database.ServerValue.TIMESTAMP
+            });
+            
+            io.to(`firebase-user-${firebaseUid}`).emit('authenticated');
+            logger.info(`Utilisateur Firebase ${firebaseUid} authentifié`);
+        } catch (error) {
+            logger.error('Erreur auth Firebase:', error);
+        }
+    });
+
+    client.on('auth_failure', async (msg) => {
+        try {
+            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                status: 'auth_failure',
+                lastActivity: admin.database.ServerValue.TIMESTAMP,
+                authFailureReason: msg
+            });
+            
+            io.to(`firebase-user-${firebaseUid}`).emit('auth_failure', msg);
+            logger.warn(`Échec auth Firebase ${firebaseUid}:`, msg);
+        } catch (error) {
+            logger.error('Erreur auth_failure Firebase:', error);
+        }
+    });
+
+    client.on('disconnected', async (reason) => {
+        await cleanupFirebaseUserSession(firebaseUid, reason);
+    });
+}
+
+// Nettoyer une session utilisateur Firebase
+async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
+    try {
+        const userSession = firebaseUserClients.get(firebaseUid);
+        
+        if (userSession) {
+            // Détruire le client WhatsApp
+            if (userSession.client) {
+                await userSession.client.destroy();
+            }
+            
+            // Supprimer les fichiers de session
+            const sessionDir = path.join(__dirname, '.wwebjs_auth', 'firebase', firebaseUid);
+            if (fs.existsSync(sessionDir)) {
+                await fs.promises.rm(sessionDir, { recursive: true, force: true });
+            }
+            
+            // Retirer de la Map
+            firebaseUserClients.delete(firebaseUid);
+            
+            // Mettre à jour Firebase
+            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                status: 'disconnected',
+                isActive: false,
+                disconnectedAt: admin.database.ServerValue.TIMESTAMP,
+                disconnectReason: reason
+            });
+            
+            // Informer le frontend
+            io.to(`firebase-user-${firebaseUid}`).emit('session_ended', { reason });
+            
+            logger.info(`Session Firebase ${firebaseUid} nettoyée: ${reason}`);
+        }
+    } catch (error) {
+        logger.error(`Erreur nettoyage session Firebase ${firebaseUid}:`, error);
+    }
+}
+
+// Nettoyage automatique des sessions inactives
+setInterval(() => {
+    const now = Date.now();
+    const TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    
+    for (const [firebaseUid, session] of firebaseUserClients.entries()) {
+        if (now - session.lastActivity > TIMEOUT) {
+            logger.info(`Session Firebase ${firebaseUid} expirée par timeout`);
+            cleanupFirebaseUserSession(firebaseUid, 'timeout');
+        }
+    }
+}, 5 * 60 * 1000); // Vérifier toutes les 5 minutes
 
 // Route pour tester si le serveur est accessible et fournir l'état de WhatsApp
 app.get('/api/status', (req, res) => {
@@ -948,13 +1212,119 @@ const io = new Server(server, {
     cookie: false
 });
 
+// ==================== GESTION SOCKET.IO FIREBASE ====================
+
+// Gestion des connexions Socket.IO avec authentification Firebase
+io.on('connection', (socket) => {
+    logger.info(`Nouvelle connexion Socket.IO: ${socket.id}`);
+    
+    // Authentification Firebase via Socket.IO
+    socket.on('firebase_auth', async (token) => {
+        try {
+            const decodedToken = await firebaseAuth.verifyIdToken(token);
+            socket.firebaseUid = decodedToken.uid;
+            socket.userEmail = decodedToken.email;
+            socket.join(`firebase-user-${decodedToken.uid}`);
+            
+            socket.emit('firebase_authenticated', { 
+                uid: decodedToken.uid,
+                email: decodedToken.email
+            });
+            
+            logger.info(`Utilisateur Firebase authentifié: ${decodedToken.uid} (${decodedToken.email})`);
+            
+            // Envoyer le statut actuel de la session si elle existe
+            const userSession = firebaseUserClients.get(decodedToken.uid);
+            if (userSession) {
+                socket.emit('status_update', {
+                    status: userSession.status,
+                    qrAvailable: !!userSession.qrCode
+                });
+                
+                if (userSession.qrCode) {
+                    socket.emit('qr', userSession.qrCode);
+                }
+            }
+            
+        } catch (error) {
+            logger.error('Erreur auth Firebase Socket.IO:', error);
+            socket.emit('firebase_auth_error', { message: 'Token invalide' });
+        }
+    });
+    
+    // Rejoindre une salle utilisateur (méthode alternative)
+    socket.on('join_user_room', async (data) => {
+        try {
+            const { token } = data;
+            const decodedToken = await firebaseAuth.verifyIdToken(token);
+            socket.firebaseUid = decodedToken.uid;
+            socket.userEmail = decodedToken.email;
+            socket.join(`firebase-user-${decodedToken.uid}`);
+            
+            socket.emit('room_joined', { uid: decodedToken.uid });
+            logger.info(`Utilisateur ${decodedToken.uid} a rejoint sa salle`);
+        } catch (error) {
+            logger.error('Erreur join room:', error);
+            socket.emit('room_join_error', { message: 'Erreur lors de la connexion' });
+        }
+    });
+    
+    // Demander le statut de la session
+    socket.on('get_session_status', () => {
+        if (socket.firebaseUid) {
+            const userSession = firebaseUserClients.get(socket.firebaseUid);
+            if (userSession) {
+                socket.emit('session_status', {
+                    status: userSession.status,
+                    qrAvailable: !!userSession.qrCode,
+                    sessionId: userSession.sessionId
+                });
+            } else {
+                socket.emit('session_status', {
+                    status: 'not_initialized',
+                    qrAvailable: false
+                });
+            }
+        }
+    });
+    
+    // Demander un nouveau QR code
+    socket.on('request_qr', async () => {
+        if (socket.firebaseUid) {
+            const userSession = firebaseUserClients.get(socket.firebaseUid);
+            if (userSession && userSession.qrCode) {
+                socket.emit('qr', userSession.qrCode);
+            } else {
+                socket.emit('qr_error', { message: 'QR code non disponible' });
+            }
+        }
+    });
+    
+    // Gestion de la déconnexion
+    socket.on('disconnect', (reason) => {
+        if (socket.firebaseUid) {
+            logger.info(`Utilisateur Firebase ${socket.firebaseUid} déconnecté: ${reason}`);
+            // Note: On ne nettoie pas immédiatement la session WhatsApp
+            // Elle sera nettoyée par le timeout automatique si nécessaire
+        } else {
+            logger.info(`Socket ${socket.id} déconnecté: ${reason}`);
+        }
+    });
+    
+    // Gestion des erreurs Socket.IO
+    socket.on('error', (error) => {
+        logger.error('Erreur Socket.IO:', error);
+        socket.emit('socket_error', { message: 'Erreur de connexion' });
+    });
+});
+
 let client = new Client({
     authStrategy: new LocalAuth({
         clientId: `whatsland-${Date.now()}`,
         dataPath: path.join(__dirname, '.wwebjs_auth')
     }),
     puppeteer: {
-        executablePath: '/usr/bin/chromium-browser',
+        executablePath: process.platform === 'win32' ? undefined : '/usr/bin/chromium-browser',
         headless: 'new',
         ignoreHTTPSErrors: true,
         protocolTimeout: 30000,
@@ -1292,6 +1662,183 @@ app.post('/api/reset-whatsapp', async (req, res) => {
     fullWhatsAppReset();
     res.json({ success: true, message: 'Réinitialisation de WhatsApp démarrée' });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== ROUTES API FIREBASE ====================
+
+// Route pour initialiser une session WhatsApp avec Firebase
+app.post('/api/firebase/init', verifyFirebaseToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user.uid;
+        const userEmail = req.user.email;
+        
+        // Vérifier si une session existe déjà
+        const existingSession = firebaseUserClients.get(firebaseUid);
+        if (existingSession && existingSession.status === 'ready') {
+            return res.json({ 
+                success: true, 
+                message: 'Session déjà active',
+                status: 'ready',
+                sessionId: existingSession.sessionId
+            });
+        }
+        
+        // Nettoyer une session existante si elle n'est pas prête
+        if (existingSession) {
+            await cleanupFirebaseUserSession(firebaseUid, 'reinit');
+        }
+        
+        // Créer un nouveau client
+        const client = await createFirebaseUserClient(firebaseUid, userEmail);
+        setupFirebaseClientEvents(firebaseUid, client);
+        await client.initialize();
+        
+        res.json({ 
+            success: true, 
+            message: 'Session WhatsApp initialisée',
+            sessionId: `whatsland-firebase-${firebaseUid}`
+        });
+        
+    } catch (error) {
+        logger.error('Erreur init Firebase:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Route pour obtenir le statut WhatsApp d'un utilisateur Firebase
+app.get('/api/firebase/status', verifyFirebaseToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user.uid;
+        const userSession = firebaseUserClients.get(firebaseUid);
+        
+        if (!userSession) {
+            return res.json({
+                status: 'not_initialized',
+                message: 'Session WhatsApp non initialisée',
+                whatsappReady: false,
+                whatsappAuthenticated: false,
+                qrAvailable: false
+            });
+        }
+        
+        res.json({
+            status: userSession.status,
+            qrAvailable: !!userSession.qrCode,
+            qrcode: userSession.qrCode,
+            whatsappReady: userSession.status === 'ready',
+            whatsappAuthenticated: userSession.status === 'authenticated' || userSession.status === 'ready',
+            sessionId: userSession.sessionId,
+            lastActivity: userSession.lastActivity,
+            userEmail: userSession.userEmail
+        });
+        
+    } catch (error) {
+        logger.error('Erreur status Firebase:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Route pour obtenir le QR code d'un utilisateur Firebase
+app.get('/api/firebase/qrcode', verifyFirebaseToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user.uid;
+        const userSession = firebaseUserClients.get(firebaseUid);
+        
+        if (!userSession || !userSession.qrCode) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'QR code non disponible' 
+            });
+        }
+        
+        res.json({ 
+            success: true,
+            qrcode: userSession.qrCode 
+        });
+        
+    } catch (error) {
+        logger.error('Erreur QR Firebase:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Route pour déconnecter WhatsApp d'un utilisateur Firebase
+app.post('/api/firebase/disconnect', verifyFirebaseToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user.uid;
+        await cleanupFirebaseUserSession(firebaseUid, 'user_requested');
+        
+        res.json({ success: true, message: 'Session WhatsApp fermée' });
+    } catch (error) {
+        logger.error('Erreur disconnect Firebase:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Route pour envoyer un message via Firebase
+app.post('/api/firebase/send-message', verifyFirebaseToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user.uid;
+        const { phoneNumber, message } = req.body;
+        
+        const userSession = firebaseUserClients.get(firebaseUid);
+        if (!userSession || userSession.status !== 'ready') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Session WhatsApp non prête' 
+            });
+        }
+        
+        const client = userSession.client;
+        const chatId = phoneNumber.includes('@') ? phoneNumber : `${phoneNumber}@c.us`;
+        
+        await client.sendMessage(chatId, message);
+        
+        // Mettre à jour l'activité
+        userSession.lastActivity = Date.now();
+        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+            lastActivity: admin.database.ServerValue.TIMESTAMP
+        });
+        
+        res.json({ success: true, message: 'Message envoyé' });
+        
+    } catch (error) {
+        logger.error('Erreur envoi message Firebase:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Route pour obtenir la liste des sessions actives (admin seulement)
+app.get('/api/firebase/sessions', verifyFirebaseToken, async (req, res) => {
+    try {
+        // Vérifier si l'utilisateur est admin
+        const userEmail = req.user.email;
+        const adminEmails = ['houssnijob@gmail.com', 'ayman@gmail.com'];
+        
+        if (!adminEmails.includes(userEmail)) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Accès non autorisé' 
+            });
+        }
+        
+        const sessions = [];
+        for (const [firebaseUid, session] of firebaseUserClients.entries()) {
+            sessions.push({
+                firebaseUid,
+                userEmail: session.userEmail,
+                status: session.status,
+                sessionId: session.sessionId,
+                lastActivity: session.lastActivity
+            });
+        }
+        
+        res.json({ success: true, sessions });
+        
+    } catch (error) {
+        logger.error('Erreur sessions Firebase:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

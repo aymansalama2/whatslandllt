@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase WhatsApp Multi-Sessions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .session-box { border: 1px solid #ccc; margin: 10px; padding: 15px; border-radius: 5px; }
+        .qr-code { max-width: 200px; height: auto; }
+        .status { padding: 5px 10px; border-radius: 3px; margin: 5px 0; }
+        .status.ready { background-color: #d4edda; color: #155724; }
+        .status.waiting { background-color: #fff3cd; color: #856404; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        .status.not-initialized { background-color: #e2e3e5; color: #383d41; }
+        button { padding: 8px 15px; margin: 5px; cursor: pointer; }
+        .log { background-color: #f8f9fa; padding: 10px; border-radius: 3px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Firebase WhatsApp Multi-Sessions</h1>
+        
+        <div id="auth-section">
+            <h2>Authentification Firebase</h2>
+            <input type="email" id="email" placeholder="Email" value="test@example.com">
+            <input type="password" id="password" placeholder="Mot de passe" value="password123">
+            <button onclick="signIn()">Se connecter</button>
+            <button onclick="signOut()">Se déconnecter</button>
+            <div id="user-info"></div>
+        </div>
+
+        <div id="whatsapp-section" style="display: none;">
+            <h2>Session WhatsApp</h2>
+            <button onclick="initWhatsApp()">Initialiser WhatsApp</button>
+            <button onclick="getStatus()">Obtenir le statut</button>
+            <button onclick="disconnect()">Déconnecter</button>
+            
+            <div class="session-box">
+                <h3>Statut de la session</h3>
+                <div id="session-status" class="status not-initialized">Non initialisé</div>
+                <div id="session-info"></div>
+                
+                <h3>QR Code</h3>
+                <div id="qr-container">
+                    <p>Aucun QR code disponible</p>
+                </div>
+                
+                <h3>Test d'envoi de message</h3>
+                <input type="tel" id="phone-number" placeholder="Numéro de téléphone" value="+33123456789">
+                <input type="text" id="message" placeholder="Message à envoyer" value="Test depuis Firebase API">
+                <button onclick="sendMessage()">Envoyer le message</button>
+            </div>
+        </div>
+
+        <div id="admin-section" style="display: none;">
+            <h2>Administration (Sessions actives)</h2>
+            <button onclick="getSessions()">Voir toutes les sessions</button>
+            <div id="sessions-list"></div>
+        </div>
+
+        <div id="logs">
+            <h3>Logs</h3>
+            <div id="log-container" class="log"></div>
+            <button onclick="clearLogs()">Effacer les logs</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+
+        // Configuration Firebase (même que dans votre projet)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCwZter6jxfthvfgBxICqnPRi4o0-5MsIQ",
+            authDomain: "watsland-96923.firebaseapp.com",
+            databaseURL: "https://watsland-96923-default-rtdb.firebaseio.com",
+            projectId: "watsland-96923",
+            storageBucket: "watsland-96923.firebasestorage.app",
+            messagingSenderId: "834505845470",
+            appId: "1:834505845470:web:69efa45396e9218658304f",
+            measurementId: "G-837VE7K58K"
+        };
+
+        // Initialiser Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Variables globales
+        let currentUser = null;
+        let currentToken = null;
+        let socket = null;
+
+        // API Base URL
+        const API_BASE = 'http://localhost:5001/api/firebase';
+
+        // Fonctions utilitaires
+        function log(message) {
+            const logContainer = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `[${timestamp}] ${message}\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('log-container').innerHTML = '';
+        }
+
+        function updateStatus(status, className = '') {
+            const statusElement = document.getElementById('session-status');
+            statusElement.textContent = status;
+            statusElement.className = `status ${className}`;
+        }
+
+        // Authentification Firebase
+        window.signIn = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                log(`Connexion réussie: ${userCredential.user.email}`);
+            } catch (error) {
+                log(`Erreur de connexion: ${error.message}`);
+                // Pour les tests, créer un utilisateur fictif
+                if (error.code === 'auth/user-not-found') {
+                    log('Utilisateur de test créé (mode développement)');
+                    currentUser = { uid: 'test-uid-' + Date.now(), email: email };
+                    currentToken = 'test-token-' + Date.now();
+                    onUserSignedIn();
+                }
+            }
+        };
+
+        window.signOut = async function() {
+            try {
+                await firebaseSignOut(auth);
+                log('Déconnexion réussie');
+            } catch (error) {
+                log(`Erreur de déconnexion: ${error.message}`);
+            }
+        };
+
+        // Écouter les changements d'état d'authentification
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                currentToken = await user.getIdToken();
+                onUserSignedIn();
+            } else {
+                currentUser = null;
+                currentToken = null;
+                onUserSignedOut();
+            }
+        });
+
+        function onUserSignedIn() {
+            document.getElementById('user-info').innerHTML = `
+                <p>Connecté en tant que: ${currentUser.email}</p>
+                <p>UID: ${currentUser.uid}</p>
+            `;
+            document.getElementById('whatsapp-section').style.display = 'block';
+            
+            // Vérifier si c'est un admin
+            const adminEmails = ['houssnijob@gmail.com', 'ayman@gmail.com', 'test@example.com'];
+            if (adminEmails.includes(currentUser.email)) {
+                document.getElementById('admin-section').style.display = 'block';
+            }
+            
+            log(`Utilisateur connecté: ${currentUser.email}`);
+        }
+
+        function onUserSignedOut() {
+            document.getElementById('user-info').innerHTML = '';
+            document.getElementById('whatsapp-section').style.display = 'none';
+            document.getElementById('admin-section').style.display = 'none';
+            updateStatus('Non connecté', 'not-initialized');
+            log('Utilisateur déconnecté');
+        }
+
+        // Fonctions API WhatsApp
+        async function makeAuthenticatedRequest(url, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentToken}`,
+                ...options.headers
+            };
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP ${response.status}`);
+            }
+            
+            return data;
+        }
+
+        window.initWhatsApp = async function() {
+            if (!currentToken) {
+                log('Erreur: Utilisateur non connecté');
+                return;
+            }
+
+            try {
+                log('Initialisation de WhatsApp...');
+                updateStatus('Initialisation...', 'waiting');
+                
+                const result = await makeAuthenticatedRequest(`${API_BASE}/init`, {
+                    method: 'POST'
+                });
+                
+                log(`WhatsApp initialisé: ${result.message}`);
+                updateStatus('Initialisé', 'waiting');
+                
+                // Commencer à vérifier le statut
+                setTimeout(getStatus, 2000);
+                
+            } catch (error) {
+                log(`Erreur initialisation: ${error.message}`);
+                updateStatus('Erreur', 'error');
+            }
+        };
+
+        window.getStatus = async function() {
+            if (!currentToken) {
+                log('Erreur: Utilisateur non connecté');
+                return;
+            }
+
+            try {
+                const result = await makeAuthenticatedRequest(`${API_BASE}/status`);
+                
+                log(`Statut: ${result.status}`);
+                
+                // Mettre à jour l'interface
+                let statusClass = 'waiting';
+                if (result.status === 'ready') statusClass = 'ready';
+                else if (result.status === 'not_initialized') statusClass = 'not-initialized';
+                else if (result.status.includes('error')) statusClass = 'error';
+                
+                updateStatus(result.status, statusClass);
+                
+                // Afficher les informations de session
+                document.getElementById('session-info').innerHTML = `
+                    <p><strong>WhatsApp prêt:</strong> ${result.whatsappReady ? 'Oui' : 'Non'}</p>
+                    <p><strong>Authentifié:</strong> ${result.whatsappAuthenticated ? 'Oui' : 'Non'}</p>
+                    <p><strong>QR disponible:</strong> ${result.qrAvailable ? 'Oui' : 'Non'}</p>
+                    ${result.sessionId ? `<p><strong>Session ID:</strong> ${result.sessionId}</p>` : ''}
+                    ${result.userEmail ? `<p><strong>Email:</strong> ${result.userEmail}</p>` : ''}
+                `;
+                
+                // Afficher le QR code si disponible
+                const qrContainer = document.getElementById('qr-container');
+                if (result.qrAvailable && result.qrcode) {
+                    qrContainer.innerHTML = `<img src="${result.qrcode}" alt="QR Code WhatsApp" class="qr-code">`;
+                } else {
+                    qrContainer.innerHTML = '<p>Aucun QR code disponible</p>';
+                }
+                
+                // Continuer à vérifier le statut si pas encore prêt
+                if (result.status !== 'ready' && result.status !== 'not_initialized') {
+                    setTimeout(getStatus, 3000);
+                }
+                
+            } catch (error) {
+                log(`Erreur statut: ${error.message}`);
+                updateStatus('Erreur', 'error');
+            }
+        };
+
+        window.sendMessage = async function() {
+            if (!currentToken) {
+                log('Erreur: Utilisateur non connecté');
+                return;
+            }
+
+            const phoneNumber = document.getElementById('phone-number').value;
+            const message = document.getElementById('message').value;
+
+            if (!phoneNumber || !message) {
+                log('Erreur: Numéro de téléphone et message requis');
+                return;
+            }
+
+            try {
+                log(`Envoi du message à ${phoneNumber}...`);
+                
+                const result = await makeAuthenticatedRequest(`${API_BASE}/send-message`, {
+                    method: 'POST',
+                    body: JSON.stringify({ phoneNumber, message })
+                });
+                
+                log(`Message envoyé avec succès: ${result.message}`);
+                
+            } catch (error) {
+                log(`Erreur envoi: ${error.message}`);
+            }
+        };
+
+        window.disconnect = async function() {
+            if (!currentToken) {
+                log('Erreur: Utilisateur non connecté');
+                return;
+            }
+
+            try {
+                log('Déconnexion de WhatsApp...');
+                
+                const result = await makeAuthenticatedRequest(`${API_BASE}/disconnect`, {
+                    method: 'POST'
+                });
+                
+                log(`Déconnecté: ${result.message}`);
+                updateStatus('Déconnecté', 'not-initialized');
+                
+                // Réinitialiser l'interface
+                document.getElementById('session-info').innerHTML = '';
+                document.getElementById('qr-container').innerHTML = '<p>Aucun QR code disponible</p>';
+                
+            } catch (error) {
+                log(`Erreur déconnexion: ${error.message}`);
+            }
+        };
+
+        window.getSessions = async function() {
+            if (!currentToken) {
+                log('Erreur: Utilisateur non connecté');
+                return;
+            }
+
+            try {
+                log('Récupération des sessions actives...');
+                
+                const result = await makeAuthenticatedRequest(`${API_BASE}/sessions`);
+                
+                log(`${result.sessions.length} session(s) active(s)`);
+                
+                const sessionsList = document.getElementById('sessions-list');
+                if (result.sessions.length === 0) {
+                    sessionsList.innerHTML = '<p>Aucune session active</p>';
+                } else {
+                    let html = '<h4>Sessions actives:</h4>';
+                    result.sessions.forEach(session => {
+                        html += `
+                            <div class="session-box">
+                                <p><strong>Email:</strong> ${session.userEmail}</p>
+                                <p><strong>UID:</strong> ${session.firebaseUid}</p>
+                                <p><strong>Statut:</strong> ${session.status}</p>
+                                <p><strong>Session ID:</strong> ${session.sessionId}</p>
+                                <p><strong>Dernière activité:</strong> ${new Date(session.lastActivity).toLocaleString()}</p>
+                            </div>
+                        `;
+                    });
+                    sessionsList.innerHTML = html;
+                }
+                
+            } catch (error) {
+                log(`Erreur sessions: ${error.message}`);
+            }
+        };
+
+        // Initialisation
+        log('Page de test chargée');
+        log('Entrez vos identifiants Firebase ou utilisez test@example.com / password123 pour les tests');
+    </script>
+</body>
+</html>
