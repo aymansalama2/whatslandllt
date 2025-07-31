@@ -21,13 +21,48 @@ const ExcelJS = require('exceljs');
 // Optimisation de la gestion de la mémoire
 global.gc && global.gc(); // Forcer le garbage collector si disponible
 
+// Système de logging optimisé pour réduire l'utilisation CPU
+const LOG_LEVELS = {
+  ERROR: 0,
+  WARN: 1,
+  INFO: 2,
+  DEBUG: 3
+};
+
+// Niveau de log par défaut en production (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG)
+const LOG_LEVEL = process.env.NODE_ENV === 'production' ? LOG_LEVELS.ERROR : LOG_LEVELS.INFO;
+
+// Système de logging optimisé qui remplace console.log/error
+const logger = {
+  error: (message, ...args) => {
+    if (LOG_LEVEL >= LOG_LEVELS.ERROR) {
+      console.error(`[ERROR] ${message}`, ...args);
+    }
+  },
+  warn: (message, ...args) => {
+    if (LOG_LEVEL >= LOG_LEVELS.WARN) {
+      console.warn(`[WARN] ${message}`, ...args);
+    }
+  },
+  info: (message, ...args) => {
+    if (LOG_LEVEL >= LOG_LEVELS.INFO) {
+      console.log(`[INFO] ${message}`, ...args);
+    }
+  },
+  debug: (message, ...args) => {
+    if (LOG_LEVEL >= LOG_LEVELS.DEBUG) {
+      console.log(`[DEBUG] ${message}`, ...args);
+    }
+  }
+};
+
 // Synchroniser la base de données au démarrage
 syncDatabase();
 
 // Désactiver manuellement les contraintes de clé étrangère au démarrage du serveur
 sequelize.query('PRAGMA foreign_keys = OFF;')
-  .then(() => console.log('Contraintes de clé étrangère désactivées manuellement'))
-  .catch(err => console.error('Erreur lors de la désactivation des contraintes:', err));
+  .then(() => logger.info('Contraintes de clé étrangère désactivées manuellement'))
+.catch(err => logger.error('Erreur lors de la désactivation des contraintes:', err));
 
 const app = express();
 app.use(cors({
@@ -970,27 +1005,27 @@ let client = new Client({
 });
 
 client.on('qr', async (qr) => {
-    console.log('QR Code reçu!');
+    logger.info('QR Code reçu!');
     lastQrCode = await qrcode.toDataURL(qr);
     whatsappReady = false;
     io.emit('qr', lastQrCode);
 });
 
 client.on('ready', () => {
-    console.log('✅ WhatsApp est prêt');
+    logger.info('✅ WhatsApp est prêt');
     whatsappReady = true;
     lastQrCode = null;
     io.emit('ready');
 });
 
 client.on('authenticated', () => {
-    console.log('🔐 Authentifié');
+    logger.info('🔐 Authentifié');
     whatsappAuthenticated = true;
     io.emit('authenticated');
 });
 
 client.on('auth_failure', (msg) => {
-    console.log('❌ Auth échouée', msg);
+    logger.warn('❌ Auth échouée', msg);
     whatsappAuthenticated = false;
     whatsappReady = false;
     io.emit('auth_failure', msg);
@@ -1003,7 +1038,7 @@ async function killChromiumProcesses() {
     const util = require('util');
     const execAsync = util.promisify(exec);
 
-    console.log('🔄 Nettoyage des processus Chrome...');
+    logger.debug('🔄 Nettoyage des processus Chrome...');
 
     // Tuer tous les processus Chrome/Chromium
     const commands = [
@@ -1023,9 +1058,9 @@ async function killChromiumProcesses() {
       }
     }
 
-    console.log('✅ Nettoyage des processus Chrome terminé');
+    logger.debug('✅ Nettoyage des processus Chrome terminé');
   } catch (error) {
-    console.error('❌ Erreur lors du nettoyage des processus Chrome:', error);
+    logger.error('❌ Erreur lors du nettoyage des processus Chrome:', error);
   }
 }
 
@@ -1037,12 +1072,12 @@ async function cleanSessionDirectory() {
     const sessionDir = path.join(__dirname, '.wwebjs_auth');
     
     if (fs.existsSync(sessionDir)) {
-      console.log('Suppression du répertoire de session WhatsApp');
+      logger.debug('Suppression du répertoire de session WhatsApp');
       await fs.promises.rm(sessionDir, { recursive: true, force: true });
-      console.log('Répertoire de session supprimé avec succès');
+      logger.debug('Répertoire de session supprimé avec succès');
     }
   } catch (error) {
-    console.error('Erreur lors de la suppression du répertoire de session:', error);
+    logger.error('Erreur lors de la suppression du répertoire de session:', error);
   }
 }
 
@@ -1357,8 +1392,8 @@ client.on('disconnected', handleDisconnect);
 const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0'; // Écouter sur toutes les interfaces
 server.listen(PORT, HOST, () => {
-    console.log(`🚀 Backend lancé sur http://${HOST}:${PORT}`);
-    console.log(`📡 Serveur accessible depuis l'extérieur sur le port ${PORT}`);
+    logger.info(`🚀 Backend lancé sur http://${HOST}:${PORT}`);
+    logger.info(`📡 Serveur accessible depuis l'extérieur sur le port ${PORT}`);
 });
 
 // Ajout d'un gestionnaire pour les arrêts gracieux
