@@ -886,7 +886,12 @@ const io = new Server(server, {
       methods: ["GET", "POST"],
       credentials: false 
     },
-    transports: ['polling']
+    transports: ['polling', 'websocket'],
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    allowUpgrades: true,
+    cookie: false
 });
 
 let client = new Client({
@@ -1022,6 +1027,9 @@ async function fullWhatsAppReset() {
         executablePath: process.env.CHROME_PATH || undefined,
         headless: true,
         ignoreHTTPSErrors: true,
+        protocolTimeout: 30000,
+        defaultViewport: { width: 800, height: 600 },
+        timeout: 30000,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -1029,7 +1037,19 @@ async function fullWhatsAppReset() {
           '--disable-accelerated-2d-canvas',
           '--no-first-run',
           '--no-zygote',
-          '--disable-gpu'
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-component-extensions-with-background-pages',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-client-side-phishing-detection',
+          '--disable-default-apps',
+          '--disable-hang-monitor',
+          '--disable-prompt-on-repost',
+          '--disable-sync',
+          '--disable-translate',
+          '--disable-features=site-per-process',
+          '--js-flags="--max-old-space-size=256"'
         ]
       }
     });
