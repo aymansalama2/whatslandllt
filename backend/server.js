@@ -349,7 +349,7 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
                 dataPath: path.join(__dirname, '.wwebjs_auth', 'firebase', firebaseUid)
             }),
                     puppeteer: {
-            executablePath: process.platform === 'win32' ? undefined : '/usr/bin/chromium',
+            executablePath: process.platform === 'win32' ? undefined : (process.env.CHROME_PATH || '/usr/bin/google-chrome'),
             headless: 'new',
             ignoreHTTPSErrors: true,
             protocolTimeout: 30000,
