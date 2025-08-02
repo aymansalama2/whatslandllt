@@ -369,35 +369,7 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
                     '--disable-gpu',
-                    '--disable-software-rasterizer',
-                    '--disable-extensions',
-                    '--disable-default-apps',
-                    '--disable-popup-blocking',
-                    '--disable-notifications',
-                    '--disable-web-security',
-                    '--disable-features=IsolateOrigins,site-per-process',
-                    '--disable-site-isolation-trials',
-                    '--no-experiments',
-                    '--no-default-browser-check',
-                    '--no-first-run',
-                    '--disable-infobars',
-                    '--disable-translate',
-                    '--disable-background-timer-throttling',
-                    '--disable-backgrounding-occluded-windows',
-                    '--disable-client-side-phishing-detection',
-                    '--disable-component-extensions-with-background-pages',
-                    '--disable-hang-monitor',
-                    '--disable-ipc-flooding-protection',
-                    '--disable-prompt-on-repost',
-                    '--disable-renderer-backgrounding',
-                    '--force-color-profile=srgb',
-                    '--metrics-recording-only',
-                    '--password-store=basic',
-                    '--use-mock-keychain',
-                    '--js-flags="--max-old-space-size=512"',
-                    `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
-                    '--single-process',
-                    '--no-zygote'
+                    '--no-first-run'
                 ]
             },
             qrMaxRetries: 3,
@@ -1699,24 +1671,8 @@ async function fullWhatsAppReset() {
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
           '--disable-gpu',
-          '--disable-extensions',
-          '--disable-component-extensions-with-background-pages',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-client-side-phishing-detection',
-          '--disable-default-apps',
-          '--disable-hang-monitor',
-          '--disable-prompt-on-repost',
-          '--disable-sync',
-          '--disable-translate',
-          '--disable-features=site-per-process',
-          '--js-flags="--max-old-space-size=256"',
-          `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
-          '--single-process'
+          '--no-first-run'
         ]
       }
     });
@@ -1807,12 +1763,8 @@ app.post('/api/reconnect', async (req, res) => {
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
             '--disable-gpu',
-            `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
-            '--single-process'
+            '--no-first-run'
           ]
           }
         });
@@ -2143,16 +2095,7 @@ async function handleDisconnect(reason) {
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-gpu',
-          '--disable-extensions',
-          '--disable-default-apps',
-          '--disable-popup-blocking',
-          '--no-default-browser-check',
-          '--no-first-run',
-          '--disable-infobars',
-          '--disable-web-security',
-          `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
-          '--single-process',
-          '--no-zygote'
+          '--no-first-run'
         ],
           protocolTimeout: 30000,
           defaultViewport: { width: 800, height: 600 },
@@ -2262,17 +2205,7 @@ let client = new Client({
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
-      '--disable-extensions',
-      '--disable-default-apps',
-      '--disable-popup-blocking',
-      '--no-default-browser-check',
-      '--no-first-run',
-      '--disable-infobars',
-      '--disable-web-security',
-      '--disable-features=IsolateOrigins,site-per-process',
-      `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
-      '--single-process',
-      '--no-zygote'
+      '--no-first-run'
     ],
     protocolTimeout: 30000,
     defaultViewport: { width: 800, height: 600 },
