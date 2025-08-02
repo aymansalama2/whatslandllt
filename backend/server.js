@@ -349,7 +349,7 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
                 dataPath: path.join(__dirname, '.wwebjs_auth', 'firebase', firebaseUid)
             }),
                     puppeteer: {
-            executablePath: process.platform === 'win32' ? undefined : '/usr/bin/chromium',
+            executablePath: process.platform === 'win32' ? undefined : '/usr/bin/chromium-browser',
             headless: 'new',
             ignoreHTTPSErrors: true,
             protocolTimeout: 30000,
@@ -1661,7 +1661,7 @@ async function fullWhatsAppReset() {
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
       puppeteer: {
-        executablePath: '/usr/bin/chromium',
+        executablePath: '/usr/bin/chromium-browser',
         headless: true,
         ignoreHTTPSErrors: true,
         protocolTimeout: 30000,
@@ -1756,7 +1756,7 @@ app.post('/api/reconnect', async (req, res) => {
         client = new Client({
           authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
           puppeteer: {
-            executablePath: '/usr/bin/chromium',
+            executablePath: '/usr/bin/chromium-browser',
             headless: true,
             ignoreHTTPSErrors: true,
                       args: [
@@ -2086,7 +2086,7 @@ async function handleDisconnect(reason) {
       client = new Client({
         authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
         puppeteer: {
-          executablePath: '/usr/bin/chromium',
+          executablePath: '/usr/bin/chromium-browser',
           headless: true,
           ignoreHTTPSErrors: true,
           defaultViewport: null,
@@ -2196,7 +2196,7 @@ let client = new Client({
   }),
   qrMaxRetries: 5,
   puppeteer: {
-    executablePath: '/usr/bin/chromium',
+    executablePath: '/usr/bin/chromium-browser',
     headless: true,
     ignoreHTTPSErrors: true,
     defaultViewport: null,
