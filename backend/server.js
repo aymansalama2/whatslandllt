@@ -4,12 +4,17 @@ require('dotenv').config();
 process.env.NODE_ENV = 'production';
 process.env.UV_THREADPOOL_SIZE = '1'; // Réduire la taille du pool de threads
 
+// Variables d'état WhatsApp
+let whatsappReady = false;
+let whatsappAuthenticated = false;
+let lastQrCode = null;
+let reconnectAttempts = 0;
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
-const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -110,15 +115,13 @@ const firebaseLimiter = rateLimit({
   }
 });
 
-// CORS sécurisé pour whatsland.click
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://whatsland.click', 'http://whatsland.click', 'http://92.113.31.157:3000']
-    : ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// CORS désactivé - Accès autorisé depuis n'importe quelle origine
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
 // Middleware de parsing
 app.use(express.json({ limit: '10mb' }));
@@ -152,37 +155,21 @@ app.get('/health', (req, res) => {
 });
 
 // Endpoint de statut détaillé (admin uniquement)
-app.get('/api/status', verifyFirebaseToken, (req, res) => {
-  // Vérifier si l'utilisateur est admin
-  const adminEmails = ['houssnijob@gmail.com', 'ayman@gmail.com'];
-  if (!adminEmails.includes(req.user.email)) {
-    return res.status(403).json({ 
-      success: false, 
-      error: 'Accès non autorisé' 
-    });
-  }
-
-  const detailedStatus = {
-    server: {
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      cpu: process.cpuUsage()
-    },
-    database: {
-      connected: sequelize.authenticate ? true : false
-    },
-    firebase: {
-      activeClients: firebaseUserClients.size,
-      sessions: Array.from(firebaseUserClients.entries()).map(([uid, session]) => ({
-        uid,
-        status: session.status,
-        email: session.userEmail,
-        lastActivity: session.lastActivity
-      }))
-    }
+app.get('/api/status', (req, res) => {
+  const status = {
+    whatsappReady: whatsappReady,
+    whatsappAuthenticated: whatsappAuthenticated,
+    qrAvailable: !!lastQrCode,
+    status: whatsappReady ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
   };
+
+  // Inclure le QR code si disponible et WhatsApp n'est pas prêt
+  if (lastQrCode && !whatsappReady) {
+    status.qrcode = lastQrCode;
+  }
   
-  res.json({ success: true, data: detailedStatus });
+  res.json(status);
 });
 
 // Configuration de multer pour le stockage temporaire des fichiers
@@ -543,35 +530,83 @@ async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
         const userSession = firebaseUserClients.get(firebaseUid);
         
         if (userSession) {
+            logger.info(`🧹 Début du nettoyage de la session ${firebaseUid}...`);
+            
             // Détruire le client WhatsApp
             if (userSession.client) {
-                await userSession.client.destroy();
+                try {
+                    await userSession.client.destroy();
+                    logger.info('✅ Client WhatsApp détruit avec succès');
+                } catch (clientError) {
+                    logger.error('❌ Erreur lors de la destruction du client:', clientError);
+                    // Continuer malgré l'erreur
+                }
             }
             
             // Supprimer les fichiers de session
             const sessionDir = path.join(__dirname, '.wwebjs_auth', 'firebase', firebaseUid);
             if (fs.existsSync(sessionDir)) {
-                await fs.promises.rm(sessionDir, { recursive: true, force: true });
+                try {
+                    await fs.promises.rm(sessionDir, { recursive: true, force: true });
+                    logger.info('✅ Répertoire de session supprimé');
+                } catch (fsError) {
+                    logger.error('❌ Erreur lors de la suppression du répertoire:', fsError);
+                    // Tenter une suppression alternative
+                    try {
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
+                        await fs.promises.rm(sessionDir, { recursive: true, force: true });
+                        logger.info('✅ Répertoire supprimé après nouvelle tentative');
+                    } catch (retryError) {
+                        logger.error('❌ Échec de la suppression après nouvelle tentative:', retryError);
+                    }
+                }
             }
             
             // Retirer de la Map
             firebaseUserClients.delete(firebaseUid);
+            logger.info('✅ Session retirée de la mémoire');
             
             // Mettre à jour Firebase
-            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
-                status: 'disconnected',
-                isActive: false,
-                disconnectedAt: admin.database.ServerValue.TIMESTAMP,
-                disconnectReason: reason
-            });
+            try {
+                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                    status: 'disconnected',
+                    isActive: false,
+                    disconnectedAt: admin.database.ServerValue.TIMESTAMP,
+                    disconnectReason: reason,
+                    cleanupSuccess: true
+                });
+                logger.info('✅ État Firebase mis à jour');
+            } catch (dbError) {
+                logger.error('❌ Erreur mise à jour Firebase:', dbError);
+                // Réessayer une fois
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
+                    await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                        status: 'disconnected',
+                        isActive: false,
+                        disconnectedAt: admin.database.ServerValue.TIMESTAMP,
+                        disconnectReason: reason,
+                        cleanupSuccess: true
+                    });
+                    logger.info('✅ État Firebase mis à jour après nouvelle tentative');
+                } catch (retryError) {
+                    logger.error('❌ Échec de la mise à jour Firebase après nouvelle tentative:', retryError);
+                }
+            }
             
             // Informer le frontend
-            io.to(`firebase-user-${firebaseUid}`).emit('session_ended', { reason });
+            io.to(`firebase-user-${firebaseUid}`).emit('session_ended', { 
+                reason,
+                success: true,
+                timestamp: Date.now()
+            });
             
-            logger.info(`Session Firebase ${firebaseUid} nettoyée: ${reason}`);
+            logger.info(`✨ Session Firebase ${firebaseUid} nettoyée avec succès: ${reason}`);
+        } else {
+            logger.warn(`⚠️ Aucune session trouvée pour l'utilisateur ${firebaseUid}`);
         }
     } catch (error) {
-        logger.error(`Erreur nettoyage session Firebase ${firebaseUid}:`, error);
+        logger.error(`❌ Erreur critique lors du nettoyage de la session ${firebaseUid}:`, error);
     }
 }
 
@@ -608,21 +643,40 @@ app.get('/api/status', (req, res) => {
 
 // Route pour obtenir le QR code directement via HTTP (plus fiable)
 app.get('/api/qrcode', async (req, res) => {
-    if (whatsappReady) {
-        return res.json({ 
-            status: 'already_connected',
-            message: 'WhatsApp is already connected'
-        });
-    }
+  console.log('📍 Demande de QR code reçue');
+  console.log('État actuel:', {
+    whatsappReady,
+    hasQrCode: !!lastQrCode,
+    whatsappAuthenticated
+  });
 
-    if (lastQrCode) {
-        res.json({ qrcode: lastQrCode });
-    } else {
-        res.status(404).json({ 
-            error: 'QR code not available yet',
-            message: 'Waiting for QR code generation...'
-        });
+  if (whatsappReady) {
+    console.log('ℹ️ WhatsApp déjà connecté, pas besoin de QR code');
+    return res.json({ 
+      status: 'already_connected',
+      message: 'WhatsApp is already connected'
+    });
+  }
+
+  if (lastQrCode) {
+    console.log('✅ QR code trouvé et envoyé');
+    res.json({ 
+      status: 'success',
+      qrcode: lastQrCode 
+    });
+  } else {
+    console.log('⏳ En attente de génération du QR code');
+    // Forcer une réinitialisation si nécessaire
+    if (!client || !client.pupPage) {
+      console.log('🔄 Réinitialisation du client WhatsApp...');
+      await fullWhatsAppReset();
     }
+    res.status(404).json({ 
+      status: 'waiting',
+      error: 'QR code not available yet',
+      message: 'Waiting for QR code generation...'
+    });
+  }
 });
 
 // Fonction optimisée pour vérifier si un contact existe et obtenir son ID
@@ -712,7 +766,25 @@ async function sendMessageWithRetry(chatId, messageData, retryCount = 0) {
 
                         // Supprimer le fichier temporaire après l'envoi
                         try {
-                            fs.unlinkSync(mediaPath);
+                            try {
+                if (fs.existsSync(mediaPath)) {
+                    await fs.promises.unlink(mediaPath);
+                    logger.info(`✅ Fichier média supprimé: ${mediaPath}`);
+                }
+            } catch (unlinkError) {
+                logger.error(`❌ Erreur lors de la suppression du fichier média ${mediaPath}:`, unlinkError);
+                // Réessayer après un court délai
+                setTimeout(async () => {
+                    try {
+                        if (fs.existsSync(mediaPath)) {
+                            await fs.promises.unlink(mediaPath);
+                            logger.info(`✅ Fichier média supprimé après nouvelle tentative: ${mediaPath}`);
+                        }
+                    } catch (retryError) {
+                        logger.error(`❌ Échec de la suppression après nouvelle tentative ${mediaPath}:`, retryError);
+                    }
+                }, 1000);
+            }
                         } catch (err) {
                             console.error('Erreur lors de la suppression du fichier temporaire:', err);
                         }
@@ -1143,7 +1215,25 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
       const fileSizeInMB = fileStats.size / (1024 * 1024);
       
       if (fileSizeInMB > 64) {
-        fs.unlinkSync(req.file.path);
+        try {
+                if (fs.existsSync(req.file.path)) {
+                    await fs.promises.unlink(req.file.path);
+                    logger.info(`✅ Fichier temporaire supprimé: ${req.file.path}`);
+                }
+            } catch (unlinkError) {
+                logger.error(`❌ Erreur lors de la suppression du fichier temporaire ${req.file.path}:`, unlinkError);
+                // Réessayer après un court délai
+                setTimeout(async () => {
+                    try {
+                        if (fs.existsSync(req.file.path)) {
+                            await fs.promises.unlink(req.file.path);
+                            logger.info(`✅ Fichier temporaire supprimé après nouvelle tentative: ${req.file.path}`);
+                        }
+                    } catch (retryError) {
+                        logger.error(`❌ Échec de la suppression après nouvelle tentative ${req.file.path}:`, retryError);
+                    }
+                }, 1000);
+            }
         return res.status(400).json({
           success: false,
           message: 'La vidéo est trop volumineuse. La taille maximale est de 64 MB.'
@@ -1265,7 +1355,25 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
 
     // Nettoyage du fichier média temporaire
     if (mediaPath && fs.existsSync(mediaPath)) {
-      fs.unlinkSync(mediaPath);
+      try {
+                if (fs.existsSync(mediaPath)) {
+                    await fs.promises.unlink(mediaPath);
+                    logger.info(`✅ Fichier média supprimé: ${mediaPath}`);
+                }
+            } catch (unlinkError) {
+                logger.error(`❌ Erreur lors de la suppression du fichier média ${mediaPath}:`, unlinkError);
+                // Réessayer après un court délai
+                setTimeout(async () => {
+                    try {
+                        if (fs.existsSync(mediaPath)) {
+                            await fs.promises.unlink(mediaPath);
+                            logger.info(`✅ Fichier média supprimé après nouvelle tentative: ${mediaPath}`);
+                        }
+                    } catch (retryError) {
+                        logger.error(`❌ Échec de la suppression après nouvelle tentative ${mediaPath}:`, retryError);
+                    }
+                }, 1000);
+            }
     }
     
     res.json({ 
@@ -1281,7 +1389,25 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
   } catch (error) {
     // Nettoyage en cas d'erreur
     if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      try {
+                if (fs.existsSync(req.file.path)) {
+                    await fs.promises.unlink(req.file.path);
+                    logger.info(`✅ Fichier temporaire supprimé: ${req.file.path}`);
+                }
+            } catch (unlinkError) {
+                logger.error(`❌ Erreur lors de la suppression du fichier temporaire ${req.file.path}:`, unlinkError);
+                // Réessayer après un court délai
+                setTimeout(async () => {
+                    try {
+                        if (fs.existsSync(req.file.path)) {
+                            await fs.promises.unlink(req.file.path);
+                            logger.info(`✅ Fichier temporaire supprimé après nouvelle tentative: ${req.file.path}`);
+                        }
+                    } catch (retryError) {
+                        logger.error(`❌ Échec de la suppression après nouvelle tentative ${req.file.path}:`, retryError);
+                    }
+                }, 1000);
+            }
     }
 
     console.error('Erreur lors de l\'envoi des messages en masse:', error);
@@ -1354,9 +1480,7 @@ app.get('/api/campaigns/:id', async (req, res) => {
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { 
-      origin: process.env.NODE_ENV === 'production' 
-        ? ['https://whatsland.click', 'http://whatsland.click', 'http://92.113.31.157:3000']
-        : ['http://localhost:5173', 'http://localhost:3000'],
+      origin: '*',
       methods: ["GET", "POST"],
       credentials: true 
     },
@@ -1688,10 +1812,32 @@ app.post('/api/reconnect', async (req, res) => {
         
         // Reconfigurer les événements
         client.on('qr', async (qr) => {
-          console.log('QR Code reçu!');
-          lastQrCode = await qrcode.toDataURL(qr);
-          whatsappReady = false;
-          io.emit('qr', lastQrCode);
+          console.log('📱 Nouveau QR Code généré !', { qrLength: qr.length });
+          try {
+            // Forcer la suppression de l'ancien QR code
+            lastQrCode = null;
+            whatsappReady = false;
+            whatsappAuthenticated = false;
+
+            // Générer le nouveau QR code
+            lastQrCode = await qrcode.toDataURL(qr, {
+              errorCorrectionLevel: 'H',
+              margin: 1,
+              scale: 8
+            });
+            console.log('✅ QR Code converti en URL data avec succès', { dataUrlLength: lastQrCode.length });
+
+            // Notifier tous les clients
+            io.emit('qr', lastQrCode);
+            console.log('📢 QR Code envoyé aux clients connectés');
+
+            // Vérifier l'état après la génération
+            checkServerHealth();
+          } catch (error) {
+            console.error('❌ Erreur lors de la génération du QR code:', error);
+            // Forcer une réinitialisation en cas d'erreur
+            setTimeout(() => fullWhatsAppReset(), 1000);
+          }
         });
         
         client.on('ready', () => {
@@ -1945,37 +2091,69 @@ app.get('/api/firebase/sessions', verifyFirebaseToken, async (req, res) => {
 console.log('🚀 Initialisation de WhatsApp Web...');
 
 // Fonction pour gérer la reconnexion automatique
-let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 // Remplacez votre fonction handleDisconnect actuelle par celle-ci:
 async function handleDisconnect(reason) {
-  console.log('🔌 Déconnecté de WhatsApp:', reason);
-  whatsappReady = false;
-  whatsappAuthenticated = false;
-  
-  // Informer le frontend
-  io.emit('disconnected', { reason });
-  
-  // Attendre un peu pour éviter les conflits
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
   try {
+    console.log('🔌 Déconnecté de WhatsApp:', reason);
+    whatsappReady = false;
+    whatsappAuthenticated = false;
+    
+    // Informer le frontend
+    io.emit('disconnected', { reason });
+    
+    // Attendre un peu pour éviter les conflits
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Vérifier si la déconnexion est due à une erreur
+    if (reason === 'error' || reason === 'NAVIGATION' || reason === 'TIMEOUT') {
+      console.log('⚠️ Déconnexion anormale détectée, nettoyage forcé...');
+      await cleanupFirebaseUserSession(firebaseUid, reason);
+    }
+
     // Destruction propre du client
     if (client) {
-      await client.destroy();
+      try {
+        await client.destroy();
+        console.log('✅ Client WhatsApp détruit avec succès');
+      } catch (destroyError) {
+        console.error('❌ Erreur lors de la destruction du client:', destroyError);
+      }
     }
     
     // Créer un nouveau client avec un ID unique
-    client = new Client({
-      authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
-      puppeteer: {
-        // Gardez vos options puppeteer existantes
-        executablePath: process.env.CHROME_PATH || undefined,
-        headless: true,
-        // autres options...
-      }
-    });
+    try {
+      client = new Client({
+        authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
+        puppeteer: {
+          executablePath: process.env.CHROME_PATH || undefined,
+          headless: true,
+          ignoreHTTPSErrors: true,
+          defaultViewport: null,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-default-apps',
+            '--disable-popup-blocking',
+            '--no-default-browser-check',
+            '--no-first-run',
+            '--disable-infobars',
+            '--disable-web-security'
+          ],
+          protocolTimeout: 30000,
+          defaultViewport: { width: 800, height: 600 },
+          timeout: 30000
+        }
+      });
+      console.log('✅ Nouveau client WhatsApp créé');
+    } catch (createError) {
+      console.error('❌ Erreur lors de la création du nouveau client:', createError);
+      throw createError;
+    }
     
     // Relier les événements du client
     client.on('qr', async (qr) => {
@@ -2002,10 +2180,21 @@ async function handleDisconnect(reason) {
     client.on('disconnected', handleDisconnect);
     
     // Initialiser le nouveau client
-    client.initialize().catch(err => {
-      console.error('Erreur lors de l\'initialisation du client:', err);
-      io.emit('error', { message: 'Erreur lors de l\'initialisation de WhatsApp' });
-    });
+    try {
+      await client.initialize();
+      console.log('✅ Client WhatsApp initialisé avec succès');
+      io.emit('status_update', {
+        status: 'initialized',
+        message: 'Client WhatsApp initialisé avec succès'
+      });
+    } catch (initError) {
+      console.error('❌ Erreur lors de l\'initialisation du client:', initError);
+      io.emit('error', { 
+        message: 'Erreur lors de l\'initialisation de WhatsApp',
+        details: initError.message
+      });
+      throw initError;
+    }
     
     io.emit('status_update', {
       status: 'initializing',
@@ -2013,32 +2202,157 @@ async function handleDisconnect(reason) {
     });
     
   } catch (error) {
-    console.error('Erreur lors de la réinitialisation:', error);
-    io.emit('error', { message: 'Erreur lors de la réinitialisation de WhatsApp' });
+    console.error('❌ Erreur lors de la réinitialisation:', error);
+    io.emit('error', { 
+      message: 'Erreur lors de la réinitialisation de WhatsApp',
+      details: error.message,
+      timestamp: Date.now()
+    });
+    
+    // Attendre avant de réessayer
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Réessayer une fois de plus
+    try {
+      await fullWhatsAppReset();
+      console.log('✅ Réinitialisation réussie après nouvelle tentative');
+    } catch (retryError) {
+      console.error('❌ Échec de la réinitialisation après nouvelle tentative:', retryError);
+      io.emit('error', { 
+        message: 'Échec de la réinitialisation après nouvelle tentative',
+        details: retryError.message,
+        timestamp: Date.now()
+      });
+    }
   }
 }
 
-// Réinitialiser le compteur de tentatives quand WhatsApp est prêt
+// Nettoyage du répertoire d'authentification
+const authDir = path.join(__dirname, '.wwebjs_auth');
+if (fs.existsSync(authDir)) {
+  console.log('🗑️ Nettoyage du répertoire d\'authentification...');
+  fs.rmSync(authDir, { recursive: true, force: true });
+}
+
+// Initialisation du client WhatsApp
+console.log('🔄 Création du client WhatsApp...');
+let client = new Client({
+  authStrategy: new LocalAuth({ 
+    clientId: `whatsland-${Date.now()}`,
+    dataPath: authDir
+  }),
+  qrMaxRetries: 5,
+  puppeteer: {
+    executablePath: process.env.CHROME_PATH || undefined,
+    headless: true,
+    ignoreHTTPSErrors: true,
+    defaultViewport: null,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-extensions',
+      '--disable-default-apps',
+      '--disable-popup-blocking',
+      '--no-default-browser-check',
+      '--no-first-run',
+      '--disable-infobars',
+      '--disable-web-security',
+      '--disable-features=IsolateOrigins,site-per-process'
+    ],
+    protocolTimeout: 30000,
+    defaultViewport: { width: 800, height: 600 },
+    timeout: 30000
+  }
+});
+
+// Configuration des événements du client WhatsApp
+client.on('qr', async (qr) => {
+  const startTime = Date.now();
+  console.log('📱 Début de génération du QR Code:', new Date().toISOString());
+  try {
+    lastQrCode = await qrcode.toDataURL(qr, {
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      scale: 8
+    });
+    const generationTime = Date.now() - startTime;
+    console.log(`✅ QR Code généré en ${generationTime}ms`);
+    io.emit('qr', lastQrCode);
+    console.log('📢 QR Code envoyé aux clients');
+  } catch (error) {
+    console.error('❌ Erreur lors de la génération du QR code:', error);
+  }
+});
+
 client.on('ready', () => {
   console.log('✅ WhatsApp est prêt');
   whatsappReady = true;
+  whatsappAuthenticated = true;
   lastQrCode = null;
   io.emit('ready');
-  reconnectAttempts = 0; // Réinitialiser le compteur
+  reconnectAttempts = 0;
 });
 
-client.initialize();
+client.on('authenticated', () => {
+  console.log('🔐 WhatsApp authentifié');
+  whatsappAuthenticated = true;
+  io.emit('authenticated');
+});
 
+client.on('auth_failure', (msg) => {
+  console.log('❌ Échec authentification:', msg);
+  whatsappAuthenticated = false;
+  io.emit('auth_failure', msg);
+});
 
 // Configurer la gestion de la reconnexion
 client.on('disconnected', handleDisconnect);
 
+// Initialiser le client
+console.log('🚀 Début de l\'initialisation du client WhatsApp:', new Date().toISOString());
+const initStartTime = Date.now();
+client.initialize().then(() => {
+  const initTime = Date.now() - initStartTime;
+  console.log(`✅ Client WhatsApp initialisé en ${initTime}ms`);
+});
+
 // Démarrage du serveur
 const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0'; // Écouter sur toutes les interfaces
+// Vérification de l'état du serveur
+const checkServerHealth = async () => {
+  console.log('🔍 Vérification de l\'état du serveur...');
+  const state = {
+    whatsappReady,
+    whatsappAuthenticated,
+    hasQrCode: !!lastQrCode,
+    clientInitialized: !!client,
+    socketConnected: !!io
+  };
+  console.log(state);
+
+  // Si le client est initialisé mais qu'il n'y a pas de QR code après 10 secondes
+  if (state.clientInitialized && !state.hasQrCode && !state.whatsappReady) {
+    const now = Date.now();
+    if (!global.lastReset || (now - global.lastReset) > 10000) {
+      console.log('⚠️ Pas de QR code après 10 secondes, réinitialisation...');
+      global.lastReset = now;
+      await fullWhatsAppReset();
+    }
+  }
+};
+
 server.listen(PORT, HOST, () => {
     logger.info(`🚀 Backend lancé sur http://${HOST}:${PORT}`);
     logger.info(`📡 Serveur accessible depuis l'extérieur sur le port ${PORT}`);
+    
+    // Vérifier l'état initial
+    checkServerHealth();
+    
+    // Vérifier périodiquement
+    setInterval(checkServerHealth, 10000);
 });
 
 // Ajout d'un gestionnaire pour les arrêts gracieux
@@ -2116,17 +2430,7 @@ if (io) {
   });
 }
 
-// ==================== DÉMARRAGE DU SERVEUR HTTP ====================
-
-const PORT = process.env.PORT || 5001;
-
-server.listen(PORT, '0.0.0.0', () => {
-  logger.info(`🚀 Serveur WhatsLand démarré sur le port ${PORT}`);
-  logger.info(`🌐 URL: https://whatsland.click:${PORT}`);
-  logger.info(`📊 Health Check: https://whatsland.click:${PORT}/health`);
-  logger.info(`🔥 Firebase multi-clients activé`);
-  logger.info(`🛡️ Sécurité renforcée activée`);
-});
+// Fin du fichier
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

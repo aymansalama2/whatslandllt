@@ -186,6 +186,7 @@ export default function WhatsLandStatus() {
     let checkInterval;
     
     if (status === 'qr' && !qrCode) {
+      setStatus('loading');
       setStatusMessage('Génération du QR code en cours...');
       
       checkInterval = setInterval(() => {
@@ -197,12 +198,19 @@ export default function WhatsLandStatus() {
               setStatus('qr');
               setStatusMessage('Nouveau QR code disponible. Scannez-le avec WhatsApp sur votre téléphone');
               clearInterval(checkInterval);
+            } else if (data.whatsappReady) {
+              setStatus('connected');
+              setStatusMessage('WhatsApp Web est connecté et opérationnel');
+              clearInterval(checkInterval);
             }
           })
-          .catch(() => {
-            // Continuer d'attendre
+          .catch((error) => {
+            console.error('Erreur lors de la vérification du statut:', error);
+            setStatus('error');
+            setStatusMessage('Erreur de connexion au serveur');
+            clearInterval(checkInterval);
           });
-      }, 3000);
+      }, 2000); // Réduit à 2 secondes pour une meilleure réactivité
     }
 
     return () => {
@@ -537,35 +545,88 @@ export default function WhatsLandStatus() {
       )}
 
       {/* Loading state for QR generation - Responsive */}
-      {status === 'qr' && !qrCode && (
+      {(status === 'qr' && !qrCode) || status === 'loading' || status === 'initializing' || status === 'connecting' ? (
         <motion.div
           variants={itemVariants}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
           className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 shadow-xl border border-white/30"
         >
           <div className="text-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-              <FiLoader className="text-blue-600 animate-spin" size={window.innerWidth < 640 ? 28 : window.innerWidth < 1024 ? 32 : 36} />
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 mx-auto mb-4 sm:mb-6">
+              {/* Cercle de chargement principal */}
+              <div className="absolute inset-0 bg-blue-100 rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <FiLoader className="text-blue-600 animate-spin" size={window.innerWidth < 640 ? 28 : window.innerWidth < 1024 ? 32 : 36} />
+              </div>
+              {/* Cercles animés */}
+              <motion.div 
+                className="absolute w-4 h-4 bg-blue-500 rounded-full"
+                animate={{
+                  rotate: 360,
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+                style={{
+                  top: "0%",
+                  left: "50%",
+                  transform: "translateX(-50%)"
+                }}
+              />
+              <motion.div 
+                className="absolute w-3 h-3 bg-blue-400 rounded-full"
+                animate={{
+                  rotate: -360,
+                  scale: [1, 1.3, 1],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+                style={{
+                  bottom: "10%",
+                  right: "0%"
+                }}
+              />
             </div>
             
             <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-2 sm:mb-3">
-              Génération du QR Code
+              {status === 'qr' ? 'Génération du QR Code' :
+               status === 'initializing' ? 'Initialisation de WhatsApp' :
+               status === 'connecting' ? 'Connexion en cours' :
+               'Chargement en cours'}
             </h3>
             <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">
-              Veuillez patienter pendant la génération du QR code...
+              {statusMessage}
             </p>
             
-            {/* Progress bar */}
-            <div className="w-full max-w-xs sm:max-w-sm mx-auto bg-gray-200 rounded-full h-2">
+            {/* Progress bar améliorée */}
+            <div className="w-full max-w-xs sm:max-w-sm mx-auto bg-gray-200 rounded-full h-2 overflow-hidden">
               <motion.div 
-                className="bg-blue-500 h-2 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 3, repeat: Infinity }}
+                className="bg-blue-500 h-full rounded-full"
+                initial={{ x: "-100%" }}
+                animate={{ x: "100%" }}
+                transition={{ 
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
               />
             </div>
+            
+            {/* Message d'aide */}
+            <p className="text-gray-500 text-xs sm:text-sm mt-4">
+              Cette opération peut prendre quelques instants...
+            </p>
           </div>
         </motion.div>
-      )}
+      ) : null}
 
       {/* Action Buttons - Responsive */}
       {(status === 'error' || status === 'disconnected') && (
