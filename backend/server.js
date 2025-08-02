@@ -394,7 +394,10 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
                     '--metrics-recording-only',
                     '--password-store=basic',
                     '--use-mock-keychain',
-                    '--js-flags="--max-old-space-size=512"'
+                    '--js-flags="--max-old-space-size=512"',
+                    `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
+                    '--single-process',
+                    '--no-zygote'
                 ]
             },
             qrMaxRetries: 3,
@@ -1711,7 +1714,9 @@ async function fullWhatsAppReset() {
           '--disable-sync',
           '--disable-translate',
           '--disable-features=site-per-process',
-          '--js-flags="--max-old-space-size=256"'
+          '--js-flags="--max-old-space-size=256"',
+          `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
+          '--single-process'
         ]
       }
     });
@@ -1798,15 +1803,17 @@ app.post('/api/reconnect', async (req, res) => {
             executablePath: process.env.CHROME_PATH || undefined,
             headless: true,
             ignoreHTTPSErrors: true,
-            args: [
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-accelerated-2d-canvas',
-              '--no-first-run',
-              '--no-zygote',
-              '--disable-gpu'
-            ]
+                      args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
+            '--single-process'
+          ]
           }
         });
         
@@ -2131,19 +2138,22 @@ async function handleDisconnect(reason) {
           headless: true,
           ignoreHTTPSErrors: true,
           defaultViewport: null,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-extensions',
-            '--disable-default-apps',
-            '--disable-popup-blocking',
-            '--no-default-browser-check',
-            '--no-first-run',
-            '--disable-infobars',
-            '--disable-web-security'
-          ],
+                  args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-default-apps',
+          '--disable-popup-blocking',
+          '--no-default-browser-check',
+          '--no-first-run',
+          '--disable-infobars',
+          '--disable-web-security',
+          `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
+          '--single-process',
+          '--no-zygote'
+        ],
           protocolTimeout: 30000,
           defaultViewport: { width: 800, height: 600 },
           timeout: 30000
@@ -2259,7 +2269,10 @@ let client = new Client({
       '--no-first-run',
       '--disable-infobars',
       '--disable-web-security',
-      '--disable-features=IsolateOrigins,site-per-process'
+      '--disable-features=IsolateOrigins,site-per-process',
+      `--user-data-dir=/tmp/chrome-${Date.now()}-${Math.random()}`,
+      '--single-process',
+      '--no-zygote'
     ],
     protocolTimeout: 30000,
     defaultViewport: { width: 800, height: 600 },
