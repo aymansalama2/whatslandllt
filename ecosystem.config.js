@@ -8,7 +8,15 @@ module.exports = {
     max_memory_restart: '300M',
     env: {
       NODE_ENV: 'production',
-      NODE_OPTIONS: '--max-old-space-size=256'
+      NODE_OPTIONS: '--max-old-space-size=256',
+      PORT: 5001,
+      HOST: '0.0.0.0'
+    },
+    env_production: {
+      NODE_ENV: 'production',
+      NODE_OPTIONS: '--max-old-space-size=256',
+      PORT: 5001,
+      HOST: '0.0.0.0'
     },
     merge_logs: true,
     error_file: 'logs/err.log',
