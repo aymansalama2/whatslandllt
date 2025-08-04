@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   FiCheck, 
   FiX, 
@@ -21,16 +22,24 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function WhatsLandStatus() {
+  const { currentUser } = useAuth();
   const [status, setStatus] = useState('loading');
   const [statusMessage, setStatusMessage] = useState('Vérification du statut...');
   const [qrCode, setQrCode] = useState('');
   const [connectionTime, setConnectionTime] = useState(null);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    checkStatus();
+    if (!currentUser) {
+      setStatus('error');
+      setStatusMessage('Utilisateur non authentifié');
+      return;
+    }
+
+    initializeWhatsAppSession();
     
-    // Configuration Socket.IO
-    const socket = io(API_URL, {
+    // Configuration Socket.IO avec authentification Firebase
+    const newSocket = io(API_URL, {
       transports: ['polling'],
       withCredentials: false,
       reconnectionAttempts: 5,
@@ -38,69 +47,129 @@ export default function WhatsLandStatus() {
       timeout: 10000
     });
 
+    // Authentification Firebase via Socket.IO
+    currentUser.getIdToken().then(token => {
+      newSocket.emit('firebase_auth', token);
+    });
+
     // Listeners Socket.IO pour la réactivité en temps réel
-    socket.on('qr', (qrCode) => {
-      console.log('✅ Nouveau QR Code reçu via Socket.IO');
+    newSocket.on('qr', (qrCode) => {
+      console.log('✅ Nouveau QR Code reçu via Socket.IO pour utilisateur:', currentUser.uid);
       setQrCode(qrCode);
       setStatus('qr');
       setStatusMessage('Nouveau QR code disponible. Scannez-le avec WhatsApp sur votre téléphone');
     });
 
-    socket.on('ready', () => {
-      console.log('✅ WhatsApp connecté via Socket.IO');
+    newSocket.on('ready', () => {
+      console.log('✅ WhatsApp connecté via Socket.IO pour utilisateur:', currentUser.uid);
       setStatus('connected');
       setStatusMessage('WhatsApp Web est connecté et opérationnel');
       setConnectionTime(new Date().toLocaleTimeString());
       setQrCode('');
     });
 
-    socket.on('authenticated', () => {
-      console.log('✅ WhatsApp authentifié via Socket.IO');
+    newSocket.on('authenticated', () => {
+      console.log('✅ WhatsApp authentifié via Socket.IO pour utilisateur:', currentUser.uid);
       setStatus('connected');
       setStatusMessage('WhatsApp Web est authentifié et prêt');
     });
 
-    socket.on('disconnected', (data) => {
+    newSocket.on('firebase_authenticated', (data) => {
+      console.log('✅ Firebase authentifié via Socket.IO:', data);
+    });
+
+    newSocket.on('status_update', (data) => {
+      console.log('📡 Mise à jour du statut:', data);
+      setStatus(data.status);
+      if (data.message) setStatusMessage(data.message);
+      if (data.qrAvailable === false) setQrCode('');
+    });
+
+    newSocket.on('disconnected', (data) => {
       console.log('❌ WhatsApp déconnecté via Socket.IO:', data);
       setStatus('disconnected');
       setStatusMessage('Connexion perdue avec WhatsApp Web');
       setQrCode('');
     });
 
-    socket.on('error', (error) => {
+    newSocket.on('error', (error) => {
       console.error('❌ Erreur Socket.IO:', error);
       setStatus('error');
       setStatusMessage(error.message || 'Erreur de connexion');
     });
 
-    socket.on('status_update', (data) => {
-      console.log('📡 Mise à jour du statut:', data);
-      if (data.status === 'initializing') {
-        setStatus('initializing');
-        setStatusMessage(data.message || 'Initialisation en cours...');
-      } else if (data.status === 'resetting') {
-        setStatus('initializing');
-        setStatusMessage(data.message || 'Réinitialisation en cours...');
-      } else if (data.status === 'reconnecting') {
-        setStatus('connecting');
-        setStatusMessage(data.message || 'Reconnexion en cours...');
-      }
+    newSocket.on('firebase_auth_error', (error) => {
+      console.error('❌ Erreur auth Firebase Socket.IO:', error);
+      setStatus('error');
+      setStatusMessage('Erreur d\'authentification Firebase');
+    });
+
+    newSocket.on('connect', () => {
+      console.log('🔗 Connexion Socket.IO établie pour utilisateur:', currentUser.uid);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('🔌 Connexion Socket.IO fermée pour utilisateur:', currentUser.uid);
     });
 
     // Fallback avec polling HTTP (au cas où Socket.IO échoue)
-    const interval = setInterval(checkStatus, 30000); // Augmenté à 30 secondes pour éviter le rate limiting
+    const interval = setInterval(() => checkFirebaseStatus(), 30000);
+
+    setSocket(newSocket);
 
     return () => {
       clearInterval(interval);
-      socket.disconnect();
+      newSocket.disconnect();
     };
-  }, []);
+  }, [currentUser]);
 
-  const checkStatus = async () => {
+  // Initialiser la session WhatsApp Firebase
+  const initializeWhatsAppSession = async () => {
+    if (!currentUser) return;
+    
     try {
-      const response = await fetch(`${API_URL}/api/status`);
+      setStatus('initializing');
+      setStatusMessage('Initialisation de votre session WhatsApp...');
       
-      // Vérifier si on a une erreur de rate limiting
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/firebase/init`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Session WhatsApp Firebase initialisée:', data);
+        checkFirebaseStatus();
+      } else {
+        setStatus('error');
+        setStatusMessage(data.message || 'Erreur lors de l\'initialisation');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur initialisation Firebase:', error);
+      setStatus('error');
+      setStatusMessage('Erreur lors de l\'initialisation de votre session');
+    }
+  };
+
+  // Vérifier le statut Firebase spécifique à l'utilisateur
+  const checkFirebaseStatus = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/firebase/status`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (response.status === 429) {
         const errorData = await response.json();
         console.warn('⚠️ Rate limiting détecté:', errorData);
@@ -111,83 +180,78 @@ export default function WhatsLandStatus() {
       
       const data = await response.json();
       
-      if (data.whatsappReady) {
-        setStatus('connected');
-        setStatusMessage('WhatsApp Web est connecté et opérationnel');
-        setConnectionTime(new Date().toLocaleTimeString());
-        setQrCode('');
-      } else if (data.qrcode) {
-        setStatus('qr');
-        setStatusMessage('Scannez le QR code avec votre téléphone WhatsApp');
-        setQrCode(data.qrcode);
-      } else if (data.error) {
-        setStatus('error');
-        setStatusMessage(data.error);
-        setQrCode('');
+      if (data.success) {
+        const session = data.session;
+        if (session.status === 'ready') {
+          setStatus('connected');
+          setStatusMessage('WhatsApp Web est connecté et opérationnel');
+          setConnectionTime(new Date().toLocaleTimeString());
+          setQrCode('');
+        } else if (session.qrCode) {
+          setStatus('qr');
+          setStatusMessage('Scannez le QR code avec votre téléphone WhatsApp');
+          setQrCode(session.qrCode);
+        } else if (session.status === 'initializing') {
+          setStatus('initializing');
+          setStatusMessage('Initialisation en cours...');
+        } else {
+          setStatus('disconnected');
+          setStatusMessage('WhatsApp Web n\'est pas connecté');
+          setQrCode('');
+        }
       } else {
-        setStatus('disconnected');
-        setStatusMessage('WhatsApp Web n\'est pas connecté');
-        setQrCode('');
+        setStatus('error');
+        setStatusMessage(data.message || 'Erreur lors de la vérification du statut');
       }
+      
     } catch (error) {
-      console.error('Erreur lors de la vérification du statut:', error);
+      console.error('❌ Erreur vérification statut Firebase:', error);
       setStatus('error');
       setStatusMessage('Erreur de connexion au serveur');
-      setQrCode('');
     }
   };
 
+
+
   const handleReconnect = async () => {
-    setStatus('connecting');
-    setStatusMessage('Reconnexion en cours...');
-    try {
-      const response = await fetch(`${API_URL}/api/reconnect`, { 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        console.log('✅ Reconnexion démarrée:', result.message);
-        setStatusMessage('Reconnexion démarrée avec succès...');
-        setTimeout(checkStatus, 3000);
-      } else {
-        throw new Error(result.message || 'Erreur lors de la reconnexion');
-      }
-    } catch (error) {
-      console.error('❌ Erreur lors de la reconnexion:', error);
+    if (!currentUser) {
       setStatus('error');
-      setStatusMessage(`Erreur lors de la reconnexion: ${error.message}`);
+      setStatusMessage('Utilisateur non authentifié');
+      return;
+    }
+
+    setStatus('connecting');
+    setStatusMessage('Réinitialisation de votre session en cours...');
+    
+    try {
+      // Réinitialiser la session WhatsApp de l'utilisateur
+      await initializeWhatsAppSession();
+      
+    } catch (error) {
+      console.log('❌ Erreur lors de la reconnexion Firebase:', error);
+      setStatus('error');
+      setStatusMessage('Erreur lors de la réinitialisation de votre session');
     }
   };
 
   const handleReset = async () => {
-    setStatus('initializing');
-    setStatusMessage('Réinitialisation complète en cours...');
-    try {
-      const response = await fetch(`${API_URL}/api/reset`, { 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        console.log('✅ Réinitialisation démarrée:', result.message);
-        setStatusMessage('Réinitialisation complète démarrée...');
-        setTimeout(checkStatus, 5000); // Plus de temps pour la réinitialisation complète
-      } else {
-        throw new Error(result.message || 'Erreur lors de la réinitialisation');
-      }
-    } catch (error) {
-      console.error('❌ Erreur lors de la réinitialisation:', error);
+    if (!currentUser) {
       setStatus('error');
-      setStatusMessage(`Erreur lors de la réinitialisation: ${error.message}`);
+      setStatusMessage('Utilisateur non authentifié');
+      return;
+    }
+
+    setStatus('initializing');
+    setStatusMessage('Réinitialisation complète de votre session en cours...');
+    
+    try {
+      // Réinitialiser complètement la session de l'utilisateur
+      await initializeWhatsAppSession();
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de la réinitialisation Firebase:', error);
+      setStatus('error');
+      setStatusMessage('Erreur lors de la réinitialisation complète');
     }
   };
 
@@ -200,22 +264,16 @@ export default function WhatsLandStatus() {
       setStatusMessage('Génération du QR code en cours...');
       
       checkInterval = setInterval(() => {
-        fetch(`${API_URL}/api/status`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.qrcode) {
-              setQrCode(data.qrcode);
-              setStatus('qr');
-              setStatusMessage('Nouveau QR code disponible. Scannez-le avec WhatsApp sur votre téléphone');
+        checkFirebaseStatus()
+          .then(() => {
+            if (status === 'qr' && qrCode) {
               clearInterval(checkInterval);
-            } else if (data.whatsappReady) {
-              setStatus('connected');
-              setStatusMessage('WhatsApp Web est connecté et opérationnel');
+            } else if (status === 'connected') {
               clearInterval(checkInterval);
             }
           })
           .catch((error) => {
-            console.error('Erreur lors de la vérification du statut:', error);
+            console.error('Erreur lors de la vérification du statut Firebase:', error);
             setStatus('error');
             setStatusMessage('Erreur de connexion au serveur');
             clearInterval(checkInterval);
