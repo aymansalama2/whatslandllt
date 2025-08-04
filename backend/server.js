@@ -1807,17 +1807,76 @@ async function fullWhatsAppReset() {
       }, 1000);
     });
     
-    // Initialiser le nouveau client
+    // Initialiser le nouveau client avec retries
     console.log('Initialisation d\'un nouveau client WhatsApp');
-    await client.initialize();
+    let retryCount = 0;
+    const maxRetries = 3;
     
-    io.emit('status_update', {
-      status: 'waiting_qr',
-      message: 'En attente d\'un nouveau QR code...'
-    });
+    while (retryCount < maxRetries) {
+      try {
+        await client.initialize();
+        console.log('✅ Client WhatsApp initialisé avec succès');
+        
+        io.emit('status_update', {
+          status: 'waiting_qr',
+          message: 'En attente d\'un nouveau QR code...'
+        });
+        
+        // Si on arrive ici, l'initialisation a réussi
+        return;
+        
+      } catch (initError) {
+        retryCount++;
+        console.error(`❌ Tentative ${retryCount}/${maxRetries} échouée:`, initError);
+        
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Attente de 5 secondes avant nouvelle tentative...`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Recréer le client avec de nouveaux paramètres
+          client = new Client({
+            authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}-retry-${retryCount}` }),
+            puppeteer: {
+              executablePath: '/usr/bin/google-chrome',
+              headless: 'new',
+              ignoreHTTPSErrors: true,
+              protocolTimeout: 0,
+              defaultViewport: null,
+              timeout: 0,
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--disable-extensions',
+                '--disable-default-apps',
+                '--window-size=1280,800',
+                '--remote-debugging-port=0',
+                '--disable-sync',
+                '--disable-background-networking',
+                '--disable-component-update',
+                '--disable-domain-reliability',
+                '--disable-hang-monitor',
+                '--disable-prompt-on-repost',
+                '--disable-session-crashed-bubble',
+                '--disable-translate',
+                '--metrics-recording-only',
+                '--no-crash-upload',
+                '--use-mock-keychain',
+                `--user-data-dir=/tmp/puppeteer-chrome-userdata-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+              ]
+            }
+          });
+        }
+      }
+    }
+    
+    // Si on arrive ici, toutes les tentatives ont échoué
+    throw new Error(`Échec de l'initialisation après ${maxRetries} tentatives`);
     
   } catch (error) {
-    console.error('Erreur lors de la réinitialisation complète:', error);
+    console.error('❌ Erreur fatale lors de la réinitialisation:', error);
     io.emit('error', { message: 'Erreur lors de la réinitialisation de WhatsApp' });
   }
 }
