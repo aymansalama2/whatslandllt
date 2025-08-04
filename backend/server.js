@@ -1572,21 +1572,6 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
-const server = http.createServer(app);
-const io = new Server(server, {
-    cors: { 
-      origin: '*',
-      methods: ["GET", "POST"],
-      credentials: true 
-    },
-    transports: ['polling', 'websocket'],
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 30000,
-    allowUpgrades: true,
-    cookie: false
-});
-
 // ==================== GESTION SOCKET.IO FIREBASE ====================
 
 // Gestion des connexions Socket.IO avec authentification Firebase
