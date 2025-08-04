@@ -1667,13 +1667,26 @@ async function fullWhatsAppReset() {
         protocolTimeout: 30000,
         defaultViewport: { width: 800, height: 600 },
         timeout: 30000,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run'
-        ]
+                        args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--disable-extensions',
+                    '--disable-plugins',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-features=TranslateUI',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor',
+                    '--remote-debugging-port=0',
+                    '--user-data-dir=/tmp/chrome-user-data',
+                    '--data-path=/tmp/chrome-data',
+                    '--disk-cache-dir=/tmp/chrome-cache'
+                ]
       }
     });
     
@@ -1759,13 +1772,26 @@ app.post('/api/reconnect', async (req, res) => {
             executablePath: '/opt/google/chrome/google-chrome',
             headless: true,
             ignoreHTTPSErrors: true,
-                      args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--no-first-run'
-          ]
+                                      args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--disable-extensions',
+                    '--disable-plugins',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-features=TranslateUI',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor',
+                    '--remote-debugging-port=0',
+                    '--user-data-dir=/tmp/chrome-user-data',
+                    '--data-path=/tmp/chrome-data',
+                    '--disk-cache-dir=/tmp/chrome-cache'
+                ]
           }
         });
         
@@ -2090,13 +2116,26 @@ async function handleDisconnect(reason) {
           headless: true,
           ignoreHTTPSErrors: true,
           defaultViewport: null,
-                  args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run'
-        ],
+                                  args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--disable-extensions',
+                    '--disable-plugins',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-features=TranslateUI',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor',
+                    '--remote-debugging-port=0',
+                    '--user-data-dir=/tmp/chrome-user-data',
+                    '--data-path=/tmp/chrome-data',
+                    '--disk-cache-dir=/tmp/chrome-cache'
+                ],
           protocolTimeout: 30000,
           defaultViewport: { width: 800, height: 600 },
           timeout: 30000
@@ -2200,13 +2239,26 @@ let client = new Client({
     headless: true,
     ignoreHTTPSErrors: true,
     defaultViewport: null,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--no-first-run'
-    ],
+                    args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--disable-extensions',
+                    '--disable-plugins',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-features=TranslateUI',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor',
+                    '--remote-debugging-port=0',
+                    '--user-data-dir=/tmp/chrome-user-data',
+                    '--data-path=/tmp/chrome-data',
+                    '--disk-cache-dir=/tmp/chrome-cache'
+                ],
     protocolTimeout: 30000,
     defaultViewport: { width: 800, height: 600 },
     timeout: 30000
