@@ -1379,20 +1379,27 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
     for (const originalNumber of numbers) {
       try {
         let formattedNumber = originalNumber.trim().replace(/\s+/g, '');
-        formattedNumber = formattedNumber.replace(/[^\d]/g, '');
         
-        if (formattedNumber.startsWith('06') || formattedNumber.startsWith('07')) {
-          formattedNumber = '212' + formattedNumber.substring(1);
+        // Nettoyer le numéro (garder seulement les chiffres)
+        let cleanNumber = formattedNumber.replace(/[^\d]/g, '');
+        
+        // Formatage pour le Maroc
+        if (cleanNumber.startsWith('06') || cleanNumber.startsWith('07')) {
+          cleanNumber = '212' + cleanNumber.substring(1);
         }
         
-        if (formattedNumber.startsWith('00212')) {
-          formattedNumber = formattedNumber.substring(2);
+        // Supprimer les préfixes internationaux
+        if (cleanNumber.startsWith('00212')) {
+          cleanNumber = cleanNumber.substring(2);
         }
         
-        if (!formattedNumber.startsWith('212')) {
+        // Ajouter le préfixe international si nécessaire
+        if (!cleanNumber.startsWith('212')) {
+          // Si ce n'est pas un numéro marocain, utiliser tel quel
           formattedNumber = originalNumber.trim();
         } else {
-          formattedNumber = '+' + formattedNumber;
+          // Format international pour WhatsApp
+          formattedNumber = '+' + cleanNumber;
         }
         
         const chatId = formattedNumber.includes('@c.us') 
@@ -1400,6 +1407,25 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
           : `${formattedNumber}@c.us`;
 
         console.log(`Tentative d'envoi à ${originalNumber} (formaté: ${chatId})`);
+        
+        // Vérifier si le numéro est valide sur WhatsApp AVANT d'envoyer
+        try {
+          const numberValidation = await client.isRegisteredUser(chatId);
+          if (!numberValidation) {
+            console.log(`Numéro non enregistré sur WhatsApp: ${chatId}`);
+            failureCount++;
+            results.push({
+              originalNumber,
+              formattedNumber: chatId,
+              status: 'error',
+              message: 'Numéro non trouvé sur WhatsApp'
+            });
+            continue; // Passer au numéro suivant
+          }
+        } catch (validationError) {
+          console.log(`Erreur lors de la validation du numéro ${chatId}:`, validationError.message);
+          // Continuer quand même, peut-être que l'envoi fonctionnera
+        }
         
         const messageData = {
           type: messageType,
@@ -1428,7 +1454,8 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
           originalNumber,
           formattedNumber: chatId,
           status: sendResult.success ? 'success' : 'error',
-          message: sendResult.message || sendResult.error
+          message: sendResult.message || sendResult.error,
+          details: sendResult.details || null
         });
           
         // Attendre 100ms entre chaque message pour optimiser la vitesse (objectif: 1s total)
