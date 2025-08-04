@@ -18,6 +18,7 @@ const { Server } = require('socket.io');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 
 // Configuration du serveur
+// Initialisation du serveur Express
 const app = express();
 const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -195,8 +196,6 @@ syncDatabase();
 sequelize.query('PRAGMA foreign_keys = OFF;')
   .then(() => logger.info('Contraintes de clé étrangère désactivées manuellement'))
 .catch(err => logger.error('Erreur lors de la désactivation des contraintes:', err));
-
-const app = express();
 
 // ==================== SÉCURITÉ ====================
 
