@@ -1722,14 +1722,47 @@ async function fullWhatsAppReset() {
       }
     }
     
-    // Tuer tous les processus Chrome
-    await killChromiumProcesses();
+    // Tuer tous les processus Chrome avec retry
+    let killAttempts = 0;
+    const maxKillAttempts = 3;
     
-    // Nettoyer le répertoire de session
-    await cleanSessionDirectory();
+    while (killAttempts < maxKillAttempts) {
+      try {
+        await killChromiumProcesses();
+        console.log('✅ Processus Chrome tués avec succès');
+        break;
+      } catch (killError) {
+        killAttempts++;
+        console.error(`❌ Tentative ${killAttempts}/${maxKillAttempts} de kill Chrome échouée:`, killError);
+        if (killAttempts < maxKillAttempts) {
+          console.log('⏳ Attente avant nouvelle tentative de kill...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
     
-    // Attendre un peu avant de créer un nouveau client
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Nettoyer le répertoire de session avec retry
+    let cleanAttempts = 0;
+    const maxCleanAttempts = 3;
+    
+    while (cleanAttempts < maxCleanAttempts) {
+      try {
+        await cleanSessionDirectory();
+        console.log('✅ Répertoires de session nettoyés avec succès');
+        break;
+      } catch (cleanError) {
+        cleanAttempts++;
+        console.error(`❌ Tentative ${cleanAttempts}/${maxCleanAttempts} de nettoyage échouée:`, cleanError);
+        if (cleanAttempts < maxCleanAttempts) {
+          console.log('⏳ Attente avant nouvelle tentative de nettoyage...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    
+    // Attendre avant de créer un nouveau client
+    console.log('⏳ Attente avant création du nouveau client...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Nettoyer les anciens répertoires Chrome
     cleanupOldChromeDirectories();
