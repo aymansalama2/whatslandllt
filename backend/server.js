@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+// Augmenter les limites des listeners pour éviter les warnings
+process.setMaxListeners(20);
+
 // Optimisation des performances Node.js
 process.env.NODE_ENV = 'production';
 process.env.UV_THREADPOOL_SIZE = '1'; // Réduire la taille du pool de threads
@@ -216,7 +219,7 @@ app.use(helmet({
 // Rate limiting pour les APIs
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limite de 100 requêtes par IP
+  max: 1000, // Augmenté à 1000 requêtes par IP pour le monitoring en temps réel
   message: {
     error: 'Trop de requêtes, veuillez réessayer plus tard.',
     retryAfter: '15 minutes'
@@ -228,10 +231,20 @@ const apiLimiter = rateLimit({
 // Rate limiting spécial pour Firebase APIs
 const firebaseLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 20, // limite de 20 requêtes par IP
+  max: 50, // Augmenté à 50 requêtes par IP
   message: {
     error: 'Limite de sessions WhatsApp atteinte, veuillez réessayer plus tard.',
     retryAfter: '5 minutes'
+  }
+});
+
+// Rate limiting spécial pour le monitoring (status endpoint)
+const statusLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 300, // 300 requêtes par minute pour le monitoring
+  message: {
+    error: 'Trop de requêtes de monitoring, veuillez réessayer plus tard.',
+    retryAfter: '1 minute'
   }
 });
 
@@ -250,6 +263,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Appliquer rate limiting aux APIs
 app.use('/api', apiLimiter);
 app.use('/api/firebase', firebaseLimiter);
+app.use('/api/status', statusLimiter); // Rate limiting spécifique pour le monitoring
 
 // ==================== ENDPOINTS DE MONITORING ====================
 
@@ -1802,9 +1816,8 @@ async function fullWhatsAppReset() {
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
       puppeteer: {
-        // Utiliser un profil persistant pour éviter les problèmes de session
+        // Configuration compatible avec LocalAuth (pas de userDataDir personnalisé)
         executablePath: '/usr/bin/google-chrome',
-        userDataDir: `/tmp/whatsapp-profile-${Date.now()}`,
         headless: true,
         ignoreHTTPSErrors: true,
         protocolTimeout: 0,
@@ -1833,14 +1846,16 @@ async function fullWhatsAppReset() {
             '--disable-translate',
             '--metrics-recording-only',
             '--no-crash-upload',
-            '--use-mock-keychain',
-            `--user-data-dir=/tmp/puppeteer-chrome-userdata-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            '--use-mock-keychain'
         ]
       }
     });
     
     // Supprimer les anciens listeners pour éviter les memory leaks
     client.removeAllListeners();
+    
+    // Augmenter la limite des listeners pour éviter les warnings
+    client.setMaxListeners(20);
     
     // Configurer les événements avec gestion des erreurs
     const setupEventHandlers = () => {
@@ -1963,8 +1978,7 @@ async function fullWhatsAppReset() {
                 '--disable-translate',
                 '--metrics-recording-only',
                 '--no-crash-upload',
-                '--use-mock-keychain',
-                `--user-data-dir=/tmp/puppeteer-chrome-userdata-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                '--use-mock-keychain'
               ]
             }
           });
