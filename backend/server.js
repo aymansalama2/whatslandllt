@@ -125,8 +125,9 @@ function getChromePath() {
             process.env.CHROME_PATH
         ],
         linux: [
-            '/opt/google/chrome/google-chrome',
+            '/usr/bin/google-chrome-stable',
             '/usr/bin/google-chrome',
+            '/opt/google/chrome/google-chrome',
             '/usr/bin/chromium-browser',
             '/usr/bin/chromium',
             '/usr/lib64/chromium-browser/chromium-browser.sh',
@@ -483,7 +484,7 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
                 dataPath: path.join(__dirname, '.wwebjs_auth', 'firebase', firebaseUid)
             }),
                     puppeteer: {
-            executablePath: process.platform === 'win32' ? undefined : '/opt/google/chrome/google-chrome',
+            executablePath: process.platform === 'win32' ? undefined : getChromePath(),
             headless: 'new',
             ignoreHTTPSErrors: true,
             protocolTimeout: 30000,
@@ -1841,7 +1842,7 @@ async function fullWhatsAppReset() {
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
       puppeteer: {
         // Configuration compatible avec LocalAuth (pas de userDataDir personnalisé)
-        executablePath: '/usr/bin/google-chrome',
+        executablePath: getChromePath(),
         headless: true,
         ignoreHTTPSErrors: true,
         protocolTimeout: 0,
@@ -2047,7 +2048,7 @@ app.post('/api/reconnect', async (req, res) => {
         client = new Client({
           authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
           puppeteer: {
-            executablePath: '/usr/bin/chromium-browser',
+            executablePath: getChromePath(),
             headless: true,
             ignoreHTTPSErrors: true,
                                       args: [
@@ -2080,9 +2081,7 @@ app.post('/api/reconnect', async (req, res) => {
                     '--metrics-recording-only',
                     '--no-crash-upload',
                     '--use-mock-keychain',
-                    `--user-data-dir=/tmp/chrome-user-data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    `--data-path=/tmp/chrome-data-${Date.now()}`,
-                    `--disk-cache-dir=/tmp/chrome-cache-${Date.now()}`
+
                 ]
           }
         });
@@ -2536,7 +2535,7 @@ let client = new Client({
   }),
   qrMaxRetries: 5,
   puppeteer: {
-    executablePath: '/usr/bin/google-chrome',
+    executablePath: getChromePath(),
     headless: true,
     ignoreHTTPSErrors: true,
     defaultViewport: null,
