@@ -1771,13 +1771,17 @@ async function fullWhatsAppReset() {
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
       puppeteer: {
-        // Utiliser Google Chrome avec des paramètres optimisés
+        // Utiliser un profil persistant pour éviter les problèmes de session
         executablePath: '/usr/bin/google-chrome',
-        headless: 'new',
+        userDataDir: `/tmp/whatsapp-profile-${Date.now()}`,
+        headless: true,
         ignoreHTTPSErrors: true,
         protocolTimeout: 0,
         defaultViewport: null,
         timeout: 0,
+        handleSIGINT: false,
+        handleSIGTERM: false,
+        handleSIGHUP: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -1804,40 +1808,73 @@ async function fullWhatsAppReset() {
       }
     });
     
-    // Configurer les événements
-    client.on('qr', async (qr) => {
-      console.log('Nouveau QR Code généré!');
-      lastQrCode = await qrcode.toDataURL(qr);
-      io.emit('qr', lastQrCode);
-    });
+    // Supprimer les anciens listeners pour éviter les memory leaks
+    client.removeAllListeners();
     
-    client.on('ready', () => {
-      console.log('✅ WhatsApp est prêt');
-      whatsappReady = true;
-      io.emit('ready');
-    });
-    
-    client.on('authenticated', () => {
-      console.log('🔐 Authentifié');
-      whatsappAuthenticated = true;
-      io.emit('authenticated');
-    });
-    
-    client.on('auth_failure', (msg) => {
-      console.log('❌ Auth échouée', msg);
-      io.emit('auth_failure', msg);
-    });
-    
-    client.on('disconnected', (reason) => {
-      console.log('🔌 Déconnecté de WhatsApp:', reason);
-      whatsappReady = false;
-      whatsappAuthenticated = false;
-      io.emit('disconnected', { reason });
+    // Configurer les événements avec gestion des erreurs
+    const setupEventHandlers = () => {
+      client.on('qr', async (qr) => {
+        try {
+          console.log('📱 Nouveau QR Code généré!');
+          lastQrCode = await qrcode.toDataURL(qr);
+          io.emit('qr', lastQrCode);
+        } catch (error) {
+          console.error('❌ Erreur lors de la génération du QR code:', error);
+        }
+      });
       
-      // Déclencher une réinitialisation complète après déconnexion
-      setTimeout(() => {
-        fullWhatsAppReset();
-      }, 1000);
+      client.on('ready', () => {
+        console.log('✅ WhatsApp est prêt');
+        whatsappReady = true;
+        io.emit('ready');
+      });
+      
+      client.on('authenticated', () => {
+        console.log('🔐 Authentifié');
+        whatsappAuthenticated = true;
+        io.emit('authenticated');
+      });
+      
+      client.on('auth_failure', (msg) => {
+        console.log('❌ Auth échouée', msg);
+        io.emit('auth_failure', msg);
+        
+        // Attendre un peu avant de réinitialiser
+        setTimeout(() => {
+          fullWhatsAppReset();
+        }, 5000);
+      });
+      
+      client.on('disconnected', async (reason) => {
+        console.log('🔌 Déconnecté de WhatsApp:', reason);
+        whatsappReady = false;
+        whatsappAuthenticated = false;
+        io.emit('disconnected', { reason });
+        
+        try {
+          // Nettoyer proprement avant de réinitialiser
+          await client.destroy();
+          await killChromiumProcesses();
+          await cleanSessionDirectory();
+          
+          // Attendre un peu plus longtemps avant de réinitialiser
+          setTimeout(() => {
+            fullWhatsAppReset();
+          }, 5000);
+        } catch (error) {
+          console.error('❌ Erreur lors du nettoyage après déconnexion:', error);
+        }
+      });
+      
+      // Gérer les erreurs non capturées
+      client.on('error', (error) => {
+        console.error('❌ Erreur WhatsApp non gérée:', error);
+        io.emit('error', { message: 'Erreur WhatsApp inattendue' });
+      });
+    };
+    
+    // Configurer les événements
+    setupEventHandlers();
     });
     
     // Initialiser le nouveau client avec retries
