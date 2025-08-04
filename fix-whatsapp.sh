@@ -1,41 +1,37 @@
 #!/bin/bash
 
-# Script pour résoudre les problèmes de connexion WhatsApp
-# À exécuter sur le serveur VPS
+# Script pour corriger les problèmes WhatsApp et redémarrer le service
+echo "🔧 Application des correctifs WhatsApp..."
 
-echo "🔧 Début du processus de réparation WhatsApp..."
+# Arrêter le service actuel
+echo "🛑 Arrêt du service WhatsApp..."
+pm2 stop whatsland 2>/dev/null || true
+pm2 delete whatsland 2>/dev/null || true
 
-# 1. Arrêter les services PM2
-echo "⏹️ Arrêt des services PM2..."
-pm2 stop all
+# Nettoyer les processus Chrome orphelins
+echo "🧹 Nettoyage des processus Chrome..."
+pkill -f "google-chrome" 2>/dev/null || true
+pkill -f "chromium" 2>/dev/null || true
+pkill -f "puppeteer" 2>/dev/null || true
 
-# 2. Tuer tous les processus Chrome/Chromium
-echo "🔄 Nettoyage des processus Chrome..."
-pkill -f chrome
-pkill -f chromium
-pkill -f "Google Chrome"
-rm -rf /tmp/.org.chromium.Chromium*
-rm -rf /tmp/.com.google.Chrome*
-rm -rf /tmp/puppeteer_dev_chrome_profile-*
+# Nettoyer les répertoires temporaires
+echo "🧹 Nettoyage des répertoires temporaires..."
+rm -rf /tmp/whatsapp-profile-* 2>/dev/null || true
+rm -rf /tmp/puppeteer-chrome-userdata-* 2>/dev/null || true
+rm -rf /tmp/chrome-* 2>/dev/null || true
 
-# 3. Créer les répertoires nécessaires
-echo "📁 Création des répertoires d'authentification..."
-mkdir -p /var/www/whatslandllt/backend/.wwebjs_auth
-mkdir -p /var/www/whatslandllt/backend/.wwebjs_cache
-chmod -R 777 /var/www/whatslandllt/backend/.wwebjs_auth
-chmod -R 777 /var/www/whatslandllt/backend/.wwebjs_cache
+# Attendre un peu
+sleep 3
 
-# 4. Mettre à jour la configuration Puppeteer dans server.js
-echo "🔧 Mise à jour de la configuration Puppeteer..."
-sed -i 's|executablePath: .*/usr/bin/chromium-browser.*|executablePath: "/usr/bin/chromium",|g' /var/www/whatslandllt/backend/server.js
+# Redémarrer le service
+echo "🚀 Redémarrage du service WhatsApp..."
+cd /var/www/whatslandllt/backend
+pm2 start ecosystem.config.js --name whatsland
 
-# 5. Vérifier les dépendances Chromium
-echo "🔍 Vérification des dépendances Chromium..."
-yum install -y nss freetype freetype-devel fontconfig fontconfig-devel libstdc++ dbus-glib libXt
+# Vérifier le statut
+echo "📊 Vérification du statut..."
+sleep 5
+pm2 status whatsland
 
-# 6. Redémarrer les services
-echo "▶️ Redémarrage des services PM2..."
-pm2 restart all
-
-echo "✅ Processus de réparation terminé!"
-echo "📱 Essayez maintenant de vous connecter à WhatsApp depuis l'interface."
+echo "✅ Correctifs appliqués et service redémarré"
+echo "📝 Logs disponibles avec: pm2 logs whatsland"

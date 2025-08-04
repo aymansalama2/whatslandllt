@@ -88,7 +88,7 @@ export default function WhatsLandStatus() {
     });
 
     // Fallback avec polling HTTP (au cas où Socket.IO échoue)
-    const interval = setInterval(checkStatus, 10000); // Réduit à 10 secondes car Socket.IO gère le temps réel
+    const interval = setInterval(checkStatus, 30000); // Augmenté à 30 secondes pour éviter le rate limiting
 
     return () => {
       clearInterval(interval);
@@ -99,6 +99,16 @@ export default function WhatsLandStatus() {
   const checkStatus = async () => {
     try {
       const response = await fetch(`${API_URL}/api/status`);
+      
+      // Vérifier si on a une erreur de rate limiting
+      if (response.status === 429) {
+        const errorData = await response.json();
+        console.warn('⚠️ Rate limiting détecté:', errorData);
+        setStatus('error');
+        setStatusMessage(`Trop de requêtes: ${errorData.error}`);
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.whatsappReady) {
@@ -210,7 +220,7 @@ export default function WhatsLandStatus() {
             setStatusMessage('Erreur de connexion au serveur');
             clearInterval(checkInterval);
           });
-      }, 2000); // Réduit à 2 secondes pour une meilleure réactivité
+      }, 5000); // Augmenté à 5 secondes pour éviter le rate limiting
     }
 
     return () => {

@@ -1732,15 +1732,39 @@ async function cleanSessionDirectory() {
   try {
     const fs = require('fs');
     const path = require('path');
-    const sessionDir = path.join(__dirname, '.wwebjs_auth');
     
-    if (fs.existsSync(sessionDir)) {
-      logger.debug('Suppression du répertoire de session WhatsApp');
-      await fs.promises.rm(sessionDir, { recursive: true, force: true });
-      logger.debug('Répertoire de session supprimé avec succès');
+    // Répertoires à nettoyer
+    const dirsToClean = [
+      path.join(__dirname, '.wwebjs_auth'),
+      path.join(__dirname, '.wwebjs_cache'),
+      path.join(__dirname, 'session_data'),
+      path.join(__dirname, '.chromium-browser-snapshots'),
+      path.join(__dirname, 'Default'),
+      path.join(__dirname, 'chrome_debug.log')
+    ];
+    
+    console.log('🧹 Nettoyage des répertoires de session...');
+    
+    for (const dir of dirsToClean) {
+      if (fs.existsSync(dir)) {
+        try {
+          const stats = await fs.promises.stat(dir);
+          if (stats.isDirectory()) {
+            await fs.promises.rm(dir, { recursive: true, force: true });
+            console.log(`✅ Répertoire supprimé: ${path.basename(dir)}`);
+          } else {
+            await fs.promises.unlink(dir);
+            console.log(`✅ Fichier supprimé: ${path.basename(dir)}`);
+          }
+        } catch (err) {
+          console.log(`⚠️ Impossible de supprimer ${path.basename(dir)}:`, err.message);
+        }
+      }
     }
+    
+    console.log('✅ Répertoires de session nettoyés avec succès');
   } catch (error) {
-    logger.error('Erreur lors de la suppression du répertoire de session:', error);
+    console.error('❌ Erreur lors de la suppression du répertoire de session:', error);
   }
 }
 
@@ -2380,44 +2404,40 @@ async function handleDisconnect(reason) {
       client = new Client({
         authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
         puppeteer: {
-          executablePath: '/usr/bin/chromium-browser',
+          executablePath: '/usr/bin/google-chrome',
           headless: true,
           ignoreHTTPSErrors: true,
           defaultViewport: null,
-                                  args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu',
-                    '--headless',
-                    '--no-first-run',
-                    '--disable-extensions',
-                    '--disable-plugins',
-                    '--disable-background-timer-throttling',
-                    '--disable-backgrounding-occluded-windows',
-                    '--disable-renderer-backgrounding',
-                    '--disable-features=TranslateUI,ProcessSingleton',
-                    '--disable-ipc-flooding-protection',
-                    '--disable-web-security',
-                    '--disable-features=VizDisplayCompositor',
-                    '--remote-debugging-port=0',
-                    '--no-default-browser-check',
-                    '--disable-default-apps',
-                    '--disable-sync',
-                    '--disable-background-networking',
-                    '--disable-component-update',
-                    '--disable-domain-reliability',
-                    '--disable-hang-monitor',
-                    '--disable-prompt-on-repost',
-                    '--disable-session-crashed-bubble',
-                    '--disable-translate',
-                    '--metrics-recording-only',
-                    '--no-crash-upload',
-                    '--use-mock-keychain',
-                    `--user-data-dir=/tmp/chrome-user-data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    `--data-path=/tmp/chrome-data-${Date.now()}`,
-                    `--disk-cache-dir=/tmp/chrome-cache-${Date.now()}`
-                ],
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-first-run',
+            '--disable-extensions',
+            '--disable-plugins',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+            '--remote-debugging-port=0',
+            '--no-default-browser-check',
+            '--disable-default-apps',
+            '--disable-sync',
+            '--disable-background-networking',
+            '--disable-component-update',
+            '--disable-domain-reliability',
+            '--disable-hang-monitor',
+            '--disable-prompt-on-repost',
+            '--disable-session-crashed-bubble',
+            '--disable-translate',
+            '--metrics-recording-only',
+            '--no-crash-upload',
+            '--use-mock-keychain'
+          ],
           protocolTimeout: 30000,
           defaultViewport: { width: 800, height: 600 },
           timeout: 30000
@@ -2512,49 +2532,44 @@ if (fs.existsSync(authDir)) {
 console.log('🔄 Création du client WhatsApp...');
 let client = new Client({
   authStrategy: new LocalAuth({ 
-    clientId: `whatsland-${Date.now()}`,
-    dataPath: authDir
+    clientId: `whatsland-${Date.now()}`
   }),
   qrMaxRetries: 5,
   puppeteer: {
-    executablePath: '/opt/google/chrome/google-chrome',
+    executablePath: '/usr/bin/google-chrome',
     headless: true,
     ignoreHTTPSErrors: true,
     defaultViewport: null,
-                    args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu',
-                    '--headless',
-                    '--no-first-run',
-                    '--disable-extensions',
-                    '--disable-plugins',
-                    '--disable-background-timer-throttling',
-                    '--disable-backgrounding-occluded-windows',
-                    '--disable-renderer-backgrounding',
-                    '--disable-features=TranslateUI,ProcessSingleton',
-                    '--disable-ipc-flooding-protection',
-                    '--disable-web-security',
-                    '--disable-features=VizDisplayCompositor',
-                    '--remote-debugging-port=0',
-                    '--no-default-browser-check',
-                    '--disable-default-apps',
-                    '--disable-sync',
-                    '--disable-background-networking',
-                    '--disable-component-update',
-                    '--disable-domain-reliability',
-                    '--disable-hang-monitor',
-                    '--disable-prompt-on-repost',
-                    '--disable-session-crashed-bubble',
-                    '--disable-translate',
-                    '--metrics-recording-only',
-                    '--no-crash-upload',
-                    '--use-mock-keychain',
-                    `--user-data-dir=/tmp/chrome-user-data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    `--data-path=/tmp/chrome-data-${Date.now()}`,
-                    `--disk-cache-dir=/tmp/chrome-cache-${Date.now()}`
-                ],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--no-first-run',
+      '--disable-extensions',
+      '--disable-plugins',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-features=TranslateUI',
+      '--disable-ipc-flooding-protection',
+      '--disable-web-security',
+      '--disable-features=VizDisplayCompositor',
+      '--remote-debugging-port=0',
+      '--no-default-browser-check',
+      '--disable-default-apps',
+      '--disable-sync',
+      '--disable-background-networking',
+      '--disable-component-update',
+      '--disable-domain-reliability',
+      '--disable-hang-monitor',
+      '--disable-prompt-on-repost',
+      '--disable-session-crashed-bubble',
+      '--disable-translate',
+      '--metrics-recording-only',
+      '--no-crash-upload',
+      '--use-mock-keychain'
+    ],
     protocolTimeout: 30000,
     defaultViewport: { width: 800, height: 600 },
     timeout: 30000
