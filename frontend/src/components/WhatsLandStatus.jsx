@@ -60,7 +60,7 @@ export default function WhatsLandStatus() {
     newSocket.on('ready', () => {
       console.log('✅ WhatsApp connecté via Socket.IO pour utilisateur:', currentUser.uid);
       setStatus('connected');
-      setStatusMessage('WhatsApp Web est connecté et opérationnel');
+      setStatusMessage('WhatsLand est connecté et prêt!');
       setConnectionTime(new Date().toLocaleTimeString());
       setQrCode('');
     });
@@ -68,17 +68,41 @@ export default function WhatsLandStatus() {
     newSocket.on('authenticated', () => {
       console.log('✅ WhatsApp authentifié via Socket.IO pour utilisateur:', currentUser.uid);
       setStatus('connected');
-      setStatusMessage('WhatsApp Web est authentifié et prêt');
+      setStatusMessage('WhatsLand est connecté et prêt!');
     });
 
     newSocket.on('firebase_authenticated', (data) => {
       console.log('✅ Firebase authentifié via Socket.IO:', data);
+      // Vérifier le statut après authentification Firebase
+      setTimeout(() => {
+        checkFirebaseStatus();
+      }, 1000);
     });
 
     newSocket.on('status_update', (data) => {
       console.log('📡 Mise à jour du statut:', data);
-      setStatus(data.status);
-      if (data.message) setStatusMessage(data.message);
+      
+      // Mise à jour du statut basée sur les données Socket.IO
+      if (data.status === 'ready') {
+        setStatus('connected');
+        setStatusMessage('WhatsLand est connecté et prêt!');
+        setConnectionTime(new Date().toLocaleTimeString());
+        setQrCode('');
+      } else if (data.status === 'qr') {
+        setStatus('qr');
+        setStatusMessage('Scannez le QR code avec votre téléphone WhatsApp');
+      } else if (data.status === 'initializing') {
+        setStatus('initializing');
+        setStatusMessage('Initialisation en cours...');
+      } else if (data.status === 'disconnected') {
+        setStatus('disconnected');
+        setStatusMessage('WhatsApp Web n\'est pas connecté');
+        setQrCode('');
+      } else {
+        setStatus(data.status);
+        if (data.message) setStatusMessage(data.message);
+      }
+      
       if (data.qrAvailable === false) setQrCode('');
     });
 
@@ -181,7 +205,7 @@ export default function WhatsLandStatus() {
         const session = data.session;
         if (session.status === 'ready') {
           setStatus('connected');
-          setStatusMessage('WhatsApp Web est connecté et opérationnel');
+          setStatusMessage('WhatsLand est connecté et prêt!');
           setConnectionTime(new Date().toLocaleTimeString());
           setQrCode('');
         } else if (session.qrCode) {
