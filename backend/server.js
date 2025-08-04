@@ -29,6 +29,37 @@ const ExcelJS = require('exceljs');
 // Configuration Firebase Admin
 const { admin, db, auth: firebaseAuth, realtimeDb } = require('./firebase-admin-config');
 
+// Nettoyage des anciens répertoires Chrome temporaires
+function cleanupOldChromeDirectories() {
+    try {
+        const tmpDir = '/tmp';
+        if (fs.existsSync(tmpDir)) {
+            const files = fs.readdirSync(tmpDir);
+            const chromePatterns = ['chrome-user-data-', 'chrome-data-', 'chrome-cache-'];
+            
+            files.forEach(file => {
+                if (chromePatterns.some(pattern => file.startsWith(pattern))) {
+                    const fullPath = path.join(tmpDir, file);
+                    try {
+                        const stats = fs.statSync(fullPath);
+                        const ageHours = (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60);
+                        
+                        // Supprimer les répertoires de plus de 1 heure
+                        if (ageHours > 1) {
+                            fs.rmSync(fullPath, { recursive: true, force: true });
+                            console.log(`🧹 Ancien répertoire Chrome supprimé: ${file}`);
+                        }
+                    } catch (err) {
+                        // Ignorer les erreurs de nettoyage
+                    }
+                }
+            });
+        }
+    } catch (err) {
+        console.log('⚠️ Erreur lors du nettoyage Chrome:', err.message);
+    }
+}
+
 // Détection automatique du navigateur selon l'OS
 function getChromePath() {
     const os = require('os');
@@ -1698,6 +1729,9 @@ async function fullWhatsAppReset() {
     // Attendre un peu avant de créer un nouveau client
     await new Promise(resolve => setTimeout(resolve, 2000));
     
+    // Nettoyer les anciens répertoires Chrome
+    cleanupOldChromeDirectories();
+    
     // Créer un nouveau client
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
@@ -1724,9 +1758,9 @@ async function fullWhatsAppReset() {
                     '--disable-web-security',
                     '--disable-features=VizDisplayCompositor',
                     '--remote-debugging-port=0',
-                    '--user-data-dir=/tmp/chrome-user-data',
-                    '--data-path=/tmp/chrome-data',
-                    '--disk-cache-dir=/tmp/chrome-cache'
+                    `--user-data-dir=/tmp/chrome-user-data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    `--data-path=/tmp/chrome-data-${Date.now()}`,
+                    `--disk-cache-dir=/tmp/chrome-cache-${Date.now()}`
                 ]
       }
     });
@@ -1829,9 +1863,9 @@ app.post('/api/reconnect', async (req, res) => {
                     '--disable-web-security',
                     '--disable-features=VizDisplayCompositor',
                     '--remote-debugging-port=0',
-                    '--user-data-dir=/tmp/chrome-user-data',
-                    '--data-path=/tmp/chrome-data',
-                    '--disk-cache-dir=/tmp/chrome-cache'
+                    `--user-data-dir=/tmp/chrome-user-data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    `--data-path=/tmp/chrome-data-${Date.now()}`,
+                    `--disk-cache-dir=/tmp/chrome-cache-${Date.now()}`
                 ]
           }
         });
@@ -2173,9 +2207,9 @@ async function handleDisconnect(reason) {
                     '--disable-web-security',
                     '--disable-features=VizDisplayCompositor',
                     '--remote-debugging-port=0',
-                    '--user-data-dir=/tmp/chrome-user-data',
-                    '--data-path=/tmp/chrome-data',
-                    '--disk-cache-dir=/tmp/chrome-cache'
+                    `--user-data-dir=/tmp/chrome-user-data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    `--data-path=/tmp/chrome-data-${Date.now()}`,
+                    `--disk-cache-dir=/tmp/chrome-cache-${Date.now()}`
                 ],
           protocolTimeout: 30000,
           defaultViewport: { width: 800, height: 600 },
@@ -2296,9 +2330,9 @@ let client = new Client({
                     '--disable-web-security',
                     '--disable-features=VizDisplayCompositor',
                     '--remote-debugging-port=0',
-                    '--user-data-dir=/tmp/chrome-user-data',
-                    '--data-path=/tmp/chrome-data',
-                    '--disk-cache-dir=/tmp/chrome-cache'
+                    `--user-data-dir=/tmp/chrome-user-data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    `--data-path=/tmp/chrome-data-${Date.now()}`,
+                    `--disk-cache-dir=/tmp/chrome-cache-${Date.now()}`
                 ],
     protocolTimeout: 30000,
     defaultViewport: { width: 800, height: 600 },
