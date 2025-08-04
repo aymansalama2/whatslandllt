@@ -29,6 +29,47 @@ const ExcelJS = require('exceljs');
 // Configuration Firebase Admin
 const { admin, db, auth: firebaseAuth, realtimeDb } = require('./firebase-admin-config');
 
+// Détection automatique du navigateur selon l'OS
+function getChromePath() {
+    const os = require('os');
+    
+    // Chemins possibles selon l'OS
+    const paths = {
+        win32: [
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+            process.env.CHROME_PATH
+        ],
+        linux: [
+            '/opt/google/chrome/google-chrome',
+            '/usr/bin/google-chrome',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/usr/lib64/chromium-browser/chromium-browser.sh',
+            process.env.CHROME_PATH
+        ],
+        darwin: [
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            process.env.CHROME_PATH
+        ]
+    };
+    
+    const platform = os.platform();
+    const possiblePaths = paths[platform] || paths.linux;
+    
+    // Tester chaque chemin
+    for (const path of possiblePaths) {
+        if (path && fs.existsSync(path)) {
+            console.log(`🔍 Chrome trouvé: ${path}`);
+            return path;
+        }
+    }
+    
+    // Si aucun chemin trouvé, utiliser undefined (Puppeteer utilisera le Chrome par défaut)
+    console.log('⚠️ Chrome non trouvé, utilisation du navigateur par défaut de Puppeteer');
+    return undefined;
+}
+
 // Optimisation de la gestion de la mémoire
 global.gc && global.gc(); // Forcer le garbage collector si disponible
 
@@ -1661,7 +1702,7 @@ async function fullWhatsAppReset() {
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
       puppeteer: {
-        executablePath: '/opt/google/chrome/google-chrome',
+        executablePath: getChromePath(),
         headless: true,
         ignoreHTTPSErrors: true,
         protocolTimeout: 30000,
@@ -1769,7 +1810,7 @@ app.post('/api/reconnect', async (req, res) => {
         client = new Client({
           authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
           puppeteer: {
-            executablePath: '/opt/google/chrome/google-chrome',
+            executablePath: getChromePath(),
             headless: true,
             ignoreHTTPSErrors: true,
                                       args: [
@@ -2112,7 +2153,7 @@ async function handleDisconnect(reason) {
       client = new Client({
         authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
         puppeteer: {
-          executablePath: '/opt/google/chrome/google-chrome',
+          executablePath: getChromePath(),
           headless: true,
           ignoreHTTPSErrors: true,
           defaultViewport: null,
