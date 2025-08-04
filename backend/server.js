@@ -22,6 +22,10 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
 
+// Configuration de base
+app.set('trust proxy', true);
+app.disable('x-powered-by');
+
 // Configuration CORS pour Express
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -44,7 +48,20 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// Route de test pour vérifier que le serveur fonctionne
+app.get('/test', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    ip: req.ip,
+    headers: req.headers
+  });
 });
 const qrcode = require('qrcode');
 const multer = require('multer');
