@@ -2599,8 +2599,6 @@ client.initialize().then(() => {
 });
 
 // Démarrage du serveur
-const PORT = process.env.PORT || 5001;
-const HOST = process.env.HOST || '0.0.0.0'; // Écouter sur toutes les interfaces
 // Vérification de l'état du serveur
 const checkServerHealth = async () => {
   console.log('🔍 Vérification de l\'état du serveur...');
