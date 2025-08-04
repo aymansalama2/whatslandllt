@@ -737,7 +737,7 @@ export default function WhatsLandStatus() {
           className="flex justify-center"
         >
           <motion.button
-            onClick={checkStatus}
+            onClick={checkFirebaseStatus}
             className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 sm:space-x-3"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
