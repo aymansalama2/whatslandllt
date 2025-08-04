@@ -1906,7 +1906,6 @@ async function fullWhatsAppReset() {
     
     // Configurer les événements
     setupEventHandlers();
-    });
     
     // Initialiser le nouveau client avec retries
     console.log('Initialisation d\'un nouveau client WhatsApp');
