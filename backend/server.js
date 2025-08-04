@@ -16,6 +16,36 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+
+// Configuration du serveur
+const app = express();
+const PORT = process.env.PORT || 5001;
+const HOST = process.env.HOST || '0.0.0.0';
+
+// Configuration CORS pour Express
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// Créer le serveur HTTP
+const server = http.createServer(app);
+
+// Configurer Socket.IO avec CORS
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
+});
 const qrcode = require('qrcode');
 const multer = require('multer');
 const path = require('path');
@@ -2595,8 +2625,8 @@ const checkServerHealth = async () => {
 };
 
 server.listen(PORT, HOST, () => {
-    logger.info(`🚀 Backend lancé sur http://${HOST}:${PORT}`);
-    logger.info(`📡 Serveur accessible depuis l'extérieur sur le port ${PORT}`);
+    console.log(`🚀 Backend lancé sur http://${HOST}:${PORT}`);
+    console.log(`📡 Serveur accessible depuis l'extérieur sur le port ${PORT}`);
     
     // Vérifier l'état initial
     checkServerHealth();
