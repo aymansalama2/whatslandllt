@@ -19,7 +19,7 @@ import {
   FiInfo
 } from 'react-icons/fi';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://92.113.31.157:5001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://whatsland.click';
 
 export default function WhatsLandStatus() {
   const { currentUser } = useAuth();
