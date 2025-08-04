@@ -6,7 +6,7 @@
  */
 
 // Configuration pour whatsland.click - Production et développement
-export const API_URL = import.meta.env.VITE_API_URL || 'https://whatsland.click:5001';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://92.113.31.157:5001';
 
 // Socket.IO configuration sécurisée
 export const SOCKET_CONFIG = {
