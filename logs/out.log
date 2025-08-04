@@ -1,0 +1,60 @@
+2025-08-04 10:40:37: Firebase Admin SDK initialisé avec succès pour le développement
+2025-08-04 10:40:38: Contraintes de clé étrangère désactivées manuellement
+2025-08-04 10:40:38: 🚀 Initialisation de WhatsApp Web...
+2025-08-04 10:40:38: 🗑️ Nettoyage du répertoire d'authentification...
+2025-08-04 10:40:38: 🔄 Création du client WhatsApp...
+2025-08-04 10:40:38: 🚀 Début de l'initialisation du client WhatsApp: 2025-08-04T09:40:38.453Z
+2025-08-04 10:40:38: 🔍 Vérification de l'état du serveur...
+2025-08-04 10:40:38: {
+2025-08-04 10:40:38:   whatsappReady: false,
+2025-08-04 10:40:38:   whatsappAuthenticated: false,
+2025-08-04 10:40:38:   hasQrCode: false,
+2025-08-04 10:40:38:   clientInitialized: true,
+2025-08-04 10:40:38:   socketConnected: true
+2025-08-04 10:40:38: }
+2025-08-04 10:40:38: ⚠️ Pas de QR code après 10 secondes, réinitialisation...
+2025-08-04 10:40:38: Erreur lors de la destruction du client: TypeError: Cannot read properties of null (reading 'close')
+2025-08-04 10:40:38:     at Client.destroy (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\src\Client.js:782:31)
+2025-08-04 10:40:38:     at fullWhatsAppReset (C:\test1\whatslandllt\backend\server.js:1644:22)
+2025-08-04 10:40:38:     at checkServerHealth (C:\test1\whatslandllt\backend\server.js:2340:13)
+2025-08-04 10:40:38:     at Server.<anonymous> (C:\test1\whatslandllt\backend\server.js:2350:5)
+2025-08-04 10:40:38:     at Object.onceWrapper (node:events:632:28)
+2025-08-04 10:40:38:     at Server.emit (node:events:530:35)
+2025-08-04 10:40:38:     at Server.<anonymous> (C:\Users\salam\AppData\Roaming\npm\node_modules\pm2\node_modules\@pm2\io\build\main\metrics\httpMetrics.js:153:37)
+2025-08-04 10:40:38:     at emitListeningNT (node:net:1983:10)
+2025-08-04 10:40:38:     at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+2025-08-04 10:40:38: Doublons d'email nettoyés
+2025-08-04 10:40:38: ✅ Connexion à la base de données établie avec succès
+2025-08-04 10:40:39: Base de données synchronisée avec succès (tables conservées)
+2025-08-04 10:40:47: Initialisation d'un nouveau client WhatsApp
+2025-08-04 10:40:48: 🔍 Vérification de l'état du serveur...
+2025-08-04 10:40:48: {
+2025-08-04 10:40:48:   whatsappReady: false,
+2025-08-04 10:40:48:   whatsappAuthenticated: false,
+2025-08-04 10:40:48:   hasQrCode: false,
+2025-08-04 10:40:48:   clientInitialized: true,
+2025-08-04 10:40:48:   socketConnected: true
+2025-08-04 10:40:48: }
+2025-08-04 10:40:48: ⚠️ Pas de QR code après 10 secondes, réinitialisation...
+2025-08-04 10:40:48: Erreur lors de la destruction du client: TypeError: Cannot read properties of null (reading 'close')
+2025-08-04 10:40:48:     at Client.destroy (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\src\Client.js:782:31)
+2025-08-04 10:40:48:     at fullWhatsAppReset (C:\test1\whatslandllt\backend\server.js:1644:22)
+2025-08-04 10:40:48:     at Timeout.checkServerHealth [as _onTimeout] (C:\test1\whatslandllt\backend\server.js:2340:13)
+2025-08-04 10:40:48:     at listOnTimeout (node:internal/timers:588:17)
+2025-08-04 10:40:48:     at process.processTimers (node:internal/timers:523:7)
+2025-08-04 10:40:58: Initialisation d'un nouveau client WhatsApp
+2025-08-04 10:40:58: 🔍 Vérification de l'état du serveur...
+2025-08-04 10:40:58: {
+2025-08-04 10:40:58:   whatsappReady: false,
+2025-08-04 10:40:58:   whatsappAuthenticated: false,
+2025-08-04 10:40:58:   hasQrCode: false,
+2025-08-04 10:40:58:   clientInitialized: true,
+2025-08-04 10:40:58:   socketConnected: true
+2025-08-04 10:40:58: }
+2025-08-04 10:40:58: ⚠️ Pas de QR code après 10 secondes, réinitialisation...
+2025-08-04 10:40:58: Erreur lors de la destruction du client: TypeError: Cannot read properties of null (reading 'close')
+2025-08-04 10:40:58:     at Client.destroy (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\src\Client.js:782:31)
+2025-08-04 10:40:58:     at fullWhatsAppReset (C:\test1\whatslandllt\backend\server.js:1644:22)
+2025-08-04 10:40:58:     at Timeout.checkServerHealth [as _onTimeout] (C:\test1\whatslandllt\backend\server.js:2340:13)
+2025-08-04 10:40:58:     at listOnTimeout (node:internal/timers:588:17)
+2025-08-04 10:40:58:     at process.processTimers (node:internal/timers:523:7)

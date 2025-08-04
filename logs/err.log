@@ -1,0 +1,57 @@
+2025-08-04 10:40:38: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
+2025-08-04 10:40:38: 
+2025-08-04 10:40:38: 
+2025-08-04 10:40:38: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
+2025-08-04 10:40:38: 
+2025-08-04 10:40:38:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
+2025-08-04 10:40:38:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
+2025-08-04 10:40:38:     at ChildProcess.emit (node:events:518:28)
+2025-08-04 10:40:38:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
+2025-08-04 10:40:38:     at onErrorNT (node:internal/child_process:483:16)
+2025-08-04 10:40:38:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2025-08-04 10:40:38: ❌ Promesse rejetée non gérée: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
+2025-08-04 10:40:38: 
+2025-08-04 10:40:38: 
+2025-08-04 10:40:38: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
+2025-08-04 10:40:38: 
+2025-08-04 10:40:38:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
+2025-08-04 10:40:38:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
+2025-08-04 10:40:38:     at ChildProcess.emit (node:events:518:28)
+2025-08-04 10:40:38:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
+2025-08-04 10:40:38:     at onErrorNT (node:internal/child_process:483:16)
+2025-08-04 10:40:38:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2025-08-04 10:40:38: Promesse: Promise {
+2025-08-04 10:40:38:   <rejected> Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
+2025-08-04 10:40:38:   
+2025-08-04 10:40:38:   
+2025-08-04 10:40:38:   TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
+2025-08-04 10:40:38:   
+2025-08-04 10:40:38:       at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
+2025-08-04 10:40:38:       at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
+2025-08-04 10:40:38:       at ChildProcess.emit (node:events:518:28)
+2025-08-04 10:40:38:       at ChildProcess._handle.onexit (node:internal/child_process:291:12)
+2025-08-04 10:40:38:       at onErrorNT (node:internal/child_process:483:16)
+2025-08-04 10:40:38:       at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2025-08-04 10:40:38: }
+2025-08-04 10:40:47: Erreur lors de la réinitialisation complète: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
+2025-08-04 10:40:47: 
+2025-08-04 10:40:47: 
+2025-08-04 10:40:47: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
+2025-08-04 10:40:47: 
+2025-08-04 10:40:47:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
+2025-08-04 10:40:47:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
+2025-08-04 10:40:47:     at ChildProcess.emit (node:events:518:28)
+2025-08-04 10:40:47:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
+2025-08-04 10:40:47:     at onErrorNT (node:internal/child_process:483:16)
+2025-08-04 10:40:47:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2025-08-04 10:40:58: Erreur lors de la réinitialisation complète: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
+2025-08-04 10:40:58: 
+2025-08-04 10:40:58: 
+2025-08-04 10:40:58: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
+2025-08-04 10:40:58: 
+2025-08-04 10:40:58:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
+2025-08-04 10:40:58:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
+2025-08-04 10:40:58:     at ChildProcess.emit (node:events:518:28)
+2025-08-04 10:40:58:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
+2025-08-04 10:40:58:     at onErrorNT (node:internal/child_process:483:16)
+2025-08-04 10:40:58:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
