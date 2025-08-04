@@ -1738,13 +1738,13 @@ async function fullWhatsAppReset() {
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
       puppeteer: {
-        // Utiliser le navigateur intégré de Puppeteer
-        product: 'chrome',
-        headless: true,
+        // Utiliser Google Chrome avec des paramètres optimisés
+        executablePath: '/usr/bin/google-chrome',
+        headless: 'new',
         ignoreHTTPSErrors: true,
-        protocolTimeout: 120000,
-        defaultViewport: { width: 1280, height: 800 },
-        timeout: 120000,
+        protocolTimeout: 0,
+        defaultViewport: null,
+        timeout: 0,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
