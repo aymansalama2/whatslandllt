@@ -5,6 +5,17 @@
     <link rel="icon" type="image/jpg" href="/WhatsApp Image 2025-07-10 à 16.19.00_31d3e4f3.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WhatsLand - Connectivité sans frontières</title>
+    
+    <!-- Early polyfill for documentPictureInPicture -->
+    <script>
+      if (typeof documentPictureInPicture === 'undefined') {
+        window.documentPictureInPicture = {
+          requestWindow: function() {
+            return Promise.reject(new Error('Picture-in-Picture non supporté'));
+          }
+        };
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
