@@ -41,4 +41,13 @@ yarn-error.log*
 
 # WhatsApp session files
 /backend/.wwebjs_auth/
-/backend/.wwebjs_cache/ 
+/backend/.wwebjs_cache/
+/backend/session_data/
+
+# Firebase credentials (CRITICAL - NEVER COMMIT THESE)
+firebase-service-account.json
+/backend/firebase-service-account.json
+**/firebase-service-account.json
+.env.firebase
+**/firebase-key.json
+**/firebase-credentials.json 
