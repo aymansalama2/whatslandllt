@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL, SOCKET_CONFIG } from '../config/apiConfig';
 import { 
   FiCheck, 
   FiX, 
@@ -18,8 +19,6 @@ import {
   FiSettings,
   FiInfo
 } from 'react-icons/fi';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://whatsland.click';
 
 export default function WhatsLandStatus() {
   const { currentUser } = useAuth();
@@ -40,11 +39,9 @@ export default function WhatsLandStatus() {
     
     // Configuration Socket.IO avec authentification Firebase
     const newSocket = io(API_URL, {
-      transports: ['polling'],
-      withCredentials: false,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
-      timeout: 10000
+      ...SOCKET_CONFIG,
+      transports: ['polling', 'websocket'], // Support both transports
+      withCredentials: false // Override for Firebase auth
     });
 
     // Authentification Firebase via Socket.IO
