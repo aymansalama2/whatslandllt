@@ -1780,7 +1780,11 @@ async function killChromiumProcesses() {
     logger.debug('🔄 Nettoyage des processus Chrome...');
 
     // Tuer tous les processus Chrome/Chromium
-    const commands = [
+    const commands = process.platform === 'win32' ? [
+      'taskkill /F /IM chrome.exe /T',
+      'taskkill /F /IM chromium.exe /T',
+      'del /F /Q %TEMP%\\puppeteer*'
+    ] : [
       'pkill -f chrome',
       'pkill -f chromium',
       'pkill -f "Google Chrome"',
