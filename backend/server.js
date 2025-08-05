@@ -118,7 +118,45 @@ const ExcelJS = require('exceljs');
 
 // Configuration Firebase Admin
 const firebaseAdmin = require('./firebase-admin-config');
-const { db, auth: firebaseAuth, realtimeDb } = firebaseAdmin;
+
+// Fonction utilitaire pour Firebase Realtime Database
+async function updateFirebaseSession(firebaseUid, data) {
+    try {
+        const realtimeDb = await firebaseAdmin.realtimeDb;
+        const admin = await firebaseAdmin.admin;
+        
+        // Ajouter les timestamps Firebase si nécessaire
+        if (data.lastActivity === 'SERVER_TIMESTAMP') {
+            data.lastActivity = 'SERVER_TIMESTAMP';
+        }
+        if (data.createdAt === 'SERVER_TIMESTAMP') {
+            data.createdAt = 'SERVER_TIMESTAMP';
+        }
+        
+        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update(data);
+    } catch (error) {
+        console.warn('⚠️ Erreur mise à jour Firebase:', error.message);
+    }
+}
+
+async function setFirebaseSession(firebaseUid, data) {
+    try {
+        const realtimeDb = await firebaseAdmin.realtimeDb;
+        const admin = await firebaseAdmin.admin;
+        
+        // Ajouter les timestamps Firebase si nécessaire
+        if (data.lastActivity === 'SERVER_TIMESTAMP') {
+            data.lastActivity = 'SERVER_TIMESTAMP';
+        }
+        if (data.createdAt === 'SERVER_TIMESTAMP') {
+            data.createdAt = 'SERVER_TIMESTAMP';
+        }
+        
+        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).set(data);
+    } catch (error) {
+        console.warn('⚠️ Erreur sauvegarde Firebase:', error.message);
+    }
+}
 
 // Nettoyage des anciens répertoires Chrome temporaires
 function cleanupOldChromeDirectories() {
@@ -567,12 +605,12 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
         });
 
         // Sauvegarder dans Firebase Realtime Database
-        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).set({
+        await setFirebaseSession(firebaseUid, {
             sessionId: `whatsland-firebase-${firebaseUid}`,
             status: 'initializing',
             userEmail: userEmail,
-            lastActivity: admin.database.ServerValue.TIMESTAMP,
-            createdAt: admin.database.ServerValue.TIMESTAMP,
+            lastActivity: 'SERVER_TIMESTAMP',
+            createdAt: 'SERVER_TIMESTAMP',
             isActive: true
         });
 
@@ -597,9 +635,9 @@ function setupFirebaseClientEvents(firebaseUid, client) {
                 userSession.lastActivity = Date.now();
                 
                 // Mettre à jour Firebase
-                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                await updateFirebaseSession(firebaseUid, {
                     status: 'waiting_qr',
-                    lastActivity: admin.database.ServerValue.TIMESTAMP
+                    lastActivity: 'SERVER_TIMESTAMP'
                 });
                 
                 // Envoyer le QR code à l'utilisateur spécifique
@@ -624,10 +662,10 @@ function setupFirebaseClientEvents(firebaseUid, client) {
                 const phoneNumber = info ? info.wid.user : null;
                 
                 // Mettre à jour Firebase
-                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                await updateFirebaseSession(firebaseUid, {
                     status: 'ready',
                     phoneNumber: phoneNumber,
-                    lastActivity: admin.database.ServerValue.TIMESTAMP
+                    lastActivity: 'SERVER_TIMESTAMP'
                 });
                 
                 io.to(`firebase-user-${firebaseUid}`).emit('ready', { phoneNumber });
@@ -640,9 +678,9 @@ function setupFirebaseClientEvents(firebaseUid, client) {
 
     client.on('authenticated', async () => {
         try {
-            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+            await updateFirebaseSession(firebaseUid, {
                 status: 'authenticated',
-                lastActivity: admin.database.ServerValue.TIMESTAMP
+                lastActivity: 'SERVER_TIMESTAMP'
             });
             
             io.to(`firebase-user-${firebaseUid}`).emit('authenticated');
@@ -654,9 +692,9 @@ function setupFirebaseClientEvents(firebaseUid, client) {
 
     client.on('auth_failure', async (msg) => {
         try {
-            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+            await updateFirebaseSession(firebaseUid, {
                 status: 'auth_failure',
-                lastActivity: admin.database.ServerValue.TIMESTAMP,
+                lastActivity: 'SERVER_TIMESTAMP',
                 authFailureReason: msg
             });
             
@@ -716,10 +754,10 @@ async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
             
             // Mettre à jour Firebase
             try {
-                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                await updateFirebaseSession(firebaseUid, {
                     status: 'disconnected',
                     isActive: false,
-                    disconnectedAt: admin.database.ServerValue.TIMESTAMP,
+                    disconnectedAt: 'SERVER_TIMESTAMP',
                     disconnectReason: reason,
                     cleanupSuccess: true
                 });
@@ -729,10 +767,10 @@ async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
                 // Réessayer une fois
                 try {
                     await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
-                    await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                    await updateFirebaseSession(firebaseUid, {
                         status: 'disconnected',
                         isActive: false,
-                        disconnectedAt: admin.database.ServerValue.TIMESTAMP,
+                        disconnectedAt: 'SERVER_TIMESTAMP',
                         disconnectReason: reason,
                         cleanupSuccess: true
                     });
@@ -2513,8 +2551,8 @@ app.post('/api/firebase/send-message',
         
         // Mettre à jour l'activité et les statistiques
         userSession.lastActivity = Date.now();
-        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
-            lastActivity: admin.database.ServerValue.TIMESTAMP,
+        await updateFirebaseSession(firebaseUid, {
+            lastActivity: 'SERVER_TIMESTAMP',
             messagesSent: admin.database.ServerValue.increment(1)
         });
         
