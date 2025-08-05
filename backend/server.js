@@ -52,7 +52,8 @@ app.use((req, res, next) => {
     'http://whatsland.click',
     'https://whatsland.click',
     'http://www.whatsland.click',
-    'https://www.whatsland.click'
+    'https://www.whatsland.click',
+    'http://92.113.31.157:3000'
   ];
   
   const origin = req.headers.origin;
@@ -82,7 +83,8 @@ const io = new Server(server, {
       'http://whatsland.click',
       'https://whatsland.click',
       'http://www.whatsland.click',
-      'https://www.whatsland.click'
+      'https://www.whatsland.click',
+      'http://92.113.31.157:3000'
     ],
     methods: ['GET', 'POST'],
     credentials: true
@@ -97,17 +99,6 @@ app.get('/test', (req, res) => {
   res.json({
     status: 'ok',
     message: 'Server is running',
-    timestamp: new Date().toISOString(),
-    ip: req.ip,
-    headers: req.headers
-  });
-});
-
-// Route API de test (accessible via nginx proxy /api/test -> /test)
-app.get('/api/test', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'API Server is running via nginx proxy',
     timestamp: new Date().toISOString(),
     ip: req.ip,
     headers: req.headers
