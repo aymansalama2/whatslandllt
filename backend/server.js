@@ -41,7 +41,7 @@ const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Configuration de base
-app.set('trust proxy', true);
+app.set('trust proxy', false);
 app.disable('x-powered-by');
 
 // Configuration CORS pour Express - Optimisée pour production
