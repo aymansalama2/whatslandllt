@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
     define: {
       // Use the environment variable from .env files or process.env
       'import.meta.env.VITE_API_URL': JSON.stringify(
-        env.VITE_API_URL || process.env.VITE_API_URL || (mode === 'development' ? 'http://localhost:5001' : 'http://whatsland.click')
+        env.VITE_API_URL || process.env.VITE_API_URL || (mode === 'development' ? 'http://localhost:5001' : undefined)
       )
     },
   }

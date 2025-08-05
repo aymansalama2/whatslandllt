@@ -44,12 +44,26 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.set('trust proxy', true);
 app.disable('x-powered-by');
 
-// Configuration CORS pour Express
+// Configuration CORS pour Express - Optimisée pour production
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://whatsland.click',
+    'https://whatsland.click',
+    'http://www.whatsland.click',
+    'https://www.whatsland.click'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
+  
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -59,10 +73,17 @@ app.use((req, res, next) => {
 // Créer le serveur HTTP
 const server = http.createServer(app);
 
-// Configurer Socket.IO avec CORS
+// Configurer Socket.IO avec CORS - Optimisé pour production
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://whatsland.click',
+      'https://whatsland.click',
+      'http://www.whatsland.click',
+      'https://www.whatsland.click'
+    ],
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -76,6 +97,17 @@ app.get('/test', (req, res) => {
   res.json({
     status: 'ok',
     message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    ip: req.ip,
+    headers: req.headers
+  });
+});
+
+// Route API de test (accessible via nginx proxy /api/test -> /test)
+app.get('/api/test', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'API Server is running via nginx proxy',
     timestamp: new Date().toISOString(),
     ip: req.ip,
     headers: req.headers
