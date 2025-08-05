@@ -6,17 +6,134 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
+import SystemHealth from './components/SystemHealth';
+import { initializeFrontendServices, checkFrontendHealth } from './services/index';
+import { getEnvironment, isLocalhost } from './config/apiConfig';
 
 function App() {
   const [loading, setLoading] = useState(true);
+  const [servicesReady, setServicesReady] = useState(false);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [showSystemHealth, setShowSystemHealth] = useState(false);
 
-  // Simulate loading state to show animation
+  // Marquer le temps de démarrage
+  if (!window.appStartTime) {
+    window.appStartTime = Date.now();
+  }
+
+  // Initialiser les services frontend
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    const initializeApp = async () => {
+      try {
+        console.log('🚀 Initialisation de l\'application WhatsLand...');
+        
+        // Initialiser les services frontend
+        const servicesResult = await initializeFrontendServices();
+        
+        if (servicesResult.success) {
+          console.log('✅ Services frontend prêts');
+          setServicesReady(true);
+          
+          // Vérifier la santé système initial
+          const health = await checkFrontendHealth();
+          setSystemHealth(health);
+          
+          // Afficher SystemHealth en développement ou si localhost
+          if (getEnvironment() === 'development' || isLocalhost()) {
+            setShowSystemHealth(true);
+          }
+        } else {
+          console.error('❌ Échec initialisation services:', servicesResult.error);
+          // Continuer même si les services échouent
+          setServicesReady(false);
+        }
+        
+      } catch (error) {
+        console.error('❌ Erreur initialisation app:', error);
+        setServicesReady(false);
+      } finally {
+        // Délai minimum pour l'animation de chargement ou fin des services
+        const minLoadingTime = 800; // 800ms minimum pour l'animation
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - (window.appStartTime || currentTime);
+        const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+        
+        setTimeout(() => {
+          setLoading(false);
+        }, remainingTime);
+      }
+    };
+
+    initializeApp();
   }, []);
+
+  // Écouteurs d'événements pour le statut des services
+  useEffect(() => {
+    const handleServicesReady = (event) => {
+      console.log('✅ Services prêts:', event.detail);
+      setServicesReady(true);
+    };
+
+    const handleServicesError = (event) => {
+      console.error('❌ Erreur services:', event.detail);
+      setServicesReady(false);
+    };
+
+    const handleHealthUpdate = async () => {
+      try {
+        const health = await checkFrontendHealth();
+        setSystemHealth(health);
+      } catch (error) {
+        console.error('❌ Erreur vérification santé:', error);
+      }
+    };
+
+    // Écouteurs d'événements
+    window.addEventListener('frontend-services-ready', handleServicesReady);
+    window.addEventListener('frontend-services-error', handleServicesError);
+    
+    // Vérification périodique de la santé (en développement uniquement)
+    let healthInterval;
+    if (getEnvironment() === 'development') {
+      healthInterval = setInterval(handleHealthUpdate, 60000); // Toutes les minutes
+    }
+
+    return () => {
+      window.removeEventListener('frontend-services-ready', handleServicesReady);
+      window.removeEventListener('frontend-services-error', handleServicesError);
+      if (healthInterval) {
+        clearInterval(healthInterval);
+      }
+    };
+  }, []);
+
+  // Gestion des raccourcis clavier pour le développement
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Ctrl/Cmd + Shift + H pour toggle SystemHealth
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'H') {
+        event.preventDefault();
+        setShowSystemHealth(prev => !prev);
+        console.log('🔧 SystemHealth toggled:', !showSystemHealth);
+      }
+      
+      // Ctrl/Cmd + Shift + D pour diagnostic complet
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        import('./services/index').then(({ runFrontendDiagnostics }) => {
+          runFrontendDiagnostics().then(diagnostics => {
+            console.table(diagnostics);
+            console.log('🔍 Diagnostic complet:', diagnostics);
+          });
+        });
+      }
+    };
+
+    if (getEnvironment() === 'development') {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showSystemHealth]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-green-50 relative overflow-hidden">
@@ -203,6 +320,21 @@ function App() {
                         >
                           Connectivité sans frontières
                         </motion.p>
+                        
+                        {/* Indicateur de statut des services */}
+                        <motion.div 
+                          className="flex items-center justify-center space-x-2 mt-3"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 1.5 }}
+                        >
+                          <div className={`w-2 h-2 rounded-full ${
+                            servicesReady ? 'bg-green-400' : 'bg-red-400'
+                          }`}></div>
+                          <span className="text-white/70 text-xs">
+                            Services {servicesReady ? 'actifs' : 'en cours...'}
+                          </span>
+                        </motion.div>
                       </div>
                     </motion.div>
                   </motion.div>
@@ -233,6 +365,47 @@ function App() {
           </UserProvider>
         </AuthProvider>
       </Router>
+      
+      {/* Composant SystemHealth (affiché selon les conditions) */}
+      {showSystemHealth && (
+        <SystemHealth 
+          compact={true} 
+          autoRefresh={true}
+        />
+      )}
+
+      {/* Notification de statut des services en cas d'erreur */}
+      {!servicesReady && !loading && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+        >
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">
+              Services en mode dégradé
+            </span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Notification de santé système en cas de problème */}
+      {systemHealth && systemHealth.overall !== 'healthy' && !showSystemHealth && (
+        <motion.button
+          onClick={() => setShowSystemHealth(true)}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-colors"
+        >
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+            <span className="text-sm font-medium">
+              Problèmes système détectés
+            </span>
+          </div>
+        </motion.button>
+      )}
     </div>
   );
 }

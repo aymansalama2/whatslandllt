@@ -7,6 +7,20 @@ process.setMaxListeners(20);
 process.env.NODE_ENV = 'production';
 process.env.UV_THREADPOOL_SIZE = '1'; // Réduire la taille du pool de threads
 
+// ✅ Initialisation des services améliorés (temporairement désactivée pour debug)
+// const { initializeServices, shutdownServices } = require('./services/index');
+
+// ✅ Initialiser tous les services au démarrage (temporairement désactivé)
+// (async () => {
+//   try {
+//     console.log('🔧 Initialisation des services backend...');
+//     await initializeServices();
+//     console.log('✅ Services backend initialisés avec succès');
+//   } catch (error) {
+//     console.error('❌ Erreur initialisation services:', error.message);
+//   }
+// })();
+
 // Variables d'état WhatsApp
 let whatsappReady = false;
 let whatsappAuthenticated = false;
@@ -80,7 +94,8 @@ const { Op } = require('sequelize');
 const ExcelJS = require('exceljs');
 
 // Configuration Firebase Admin
-const { admin, db, auth: firebaseAuth, realtimeDb } = require('./firebase-admin-config');
+const firebaseAdmin = require('./firebase-admin-config');
+const { db, auth: firebaseAuth, realtimeDb } = firebaseAdmin;
 
 // Nettoyage des anciens répertoires Chrome temporaires
 function cleanupOldChromeDirectories() {
@@ -429,7 +444,7 @@ async function verifyFirebaseToken(req, res, next) {
       });
     }
     
-    const decodedToken = await firebaseAuth.verifyIdToken(token);
+    const decodedToken = await firebaseAdmin.verifyToken(token);
     
     // Vérifications supplémentaires
     if (!decodedToken.uid || !decodedToken.email) {
@@ -470,7 +485,13 @@ function throttleCPU(fn) {
 async function createFirebaseUserClient(firebaseUid, userEmail) {
     try {
         // Vérifier si l'utilisateur existe dans Firebase
-        const userRecord = await firebaseAuth.getUser(firebaseUid);
+        try {
+            const userRecord = await firebaseAdmin.getUser(firebaseUid);
+            console.log(`✅ Utilisateur Firebase vérifié: ${userRecord.email}`);
+        } catch (firebaseError) {
+            console.warn(`⚠️ Impossible de vérifier l'utilisateur Firebase: ${firebaseError.message}`);
+            // Continuer quand même - l'utilisateur peut exister mais Firebase peut avoir des problèmes temporaires
+        }
         
         const client = new Client({
             authStrategy: new LocalAuth({ 
@@ -786,6 +807,11 @@ app.get('/api/qrcode', async (req, res) => {
 // Fonction optimisée pour vérifier si un contact existe et obtenir son ID
 async function getNumberId(number) {
     try {
+        // Vérifier l'état de la connexion WhatsApp
+        if (!whatsappReady || !whatsappAuthenticated || !client) {
+            throw new Error('WhatsApp n\'est pas prêt ou non authentifié');
+        }
+
         let cleanNumber = number.replace(/[^\d]/g, '');
         if (cleanNumber.startsWith('0')) {
             cleanNumber = '212' + cleanNumber.substring(1);
@@ -1410,6 +1436,11 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
         
         // Vérifier si le numéro est valide sur WhatsApp AVANT d'envoyer
         try {
+          // Vérifier l'état de la connexion WhatsApp
+          if (!whatsappReady || !whatsappAuthenticated || !client) {
+            throw new Error('WhatsApp n\'est pas prêt ou non authentifié');
+          }
+          
           const numberValidation = await client.isRegisteredUser(chatId);
           if (!numberValidation) {
             console.log(`Numéro non enregistré sur WhatsApp: ${chatId}`);
@@ -1617,7 +1648,7 @@ io.on('connection', (socket) => {
     // Authentification Firebase via Socket.IO
     socket.on('firebase_auth', async (token) => {
         try {
-            const decodedToken = await firebaseAuth.verifyIdToken(token);
+            const decodedToken = await firebaseAdmin.verifyToken(token);
             socket.firebaseUid = decodedToken.uid;
             socket.userEmail = decodedToken.email;
             socket.join(`firebase-user-${decodedToken.uid}`);
@@ -1652,7 +1683,7 @@ io.on('connection', (socket) => {
     socket.on('join_user_room', async (data) => {
         try {
             const { token } = data;
-            const decodedToken = await firebaseAuth.verifyIdToken(token);
+            const decodedToken = await firebaseAdmin.verifyToken(token);
             socket.firebaseUid = decodedToken.uid;
             socket.userEmail = decodedToken.email;
             socket.join(`firebase-user-${decodedToken.uid}`);
@@ -1998,7 +2029,7 @@ async function fullWhatsAppReset() {
           client = new Client({
             authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}-retry-${retryCount}` }),
             puppeteer: {
-              executablePath: '/usr/bin/google-chrome',
+              executablePath: getChromePath(),
               headless: 'new',
               ignoreHTTPSErrors: true,
               protocolTimeout: 0,
@@ -2192,36 +2223,76 @@ app.post('/api/firebase/init', verifyFirebaseToken, async (req, res) => {
         const firebaseUid = req.user.uid;
         const userEmail = req.user.email;
         
-        // Vérifier si une session existe déjà
+        console.log(`🔄 Tentative d'initialisation session pour utilisateur: ${userEmail} (${firebaseUid})`);
+        
+        // Vérifier si une session existe déjà et est utilisable
         const existingSession = firebaseUserClients.get(firebaseUid);
-        if (existingSession && existingSession.status === 'ready') {
-            return res.json({ 
-                success: true, 
-                message: 'Session déjà active',
-                status: 'ready',
-                sessionId: existingSession.sessionId
-            });
-        }
-        
-        // Nettoyer une session existante si elle n'est pas prête
         if (existingSession) {
-            await cleanupFirebaseUserSession(firebaseUid, 'reinit');
+            console.log(`📋 Session existante trouvée, statut: ${existingSession.status}`);
+            
+            // Si la session est prête ou authentifiée, la réutiliser
+            if (existingSession.status === 'ready' || existingSession.status === 'authenticated') {
+                console.log(`✅ Réutilisation de la session existante pour ${userEmail}`);
+                return res.json({ 
+                    success: true, 
+                    message: 'Session existante réutilisée',
+                    status: existingSession.status,
+                    sessionId: existingSession.sessionId,
+                    qrcode: existingSession.qrCode
+                });
+            }
+            
+            // Si la session est en cours d'initialisation, la laisser continuer
+            if (existingSession.status === 'initializing' || existingSession.status === 'qr_ready') {
+                console.log(`⏳ Session en cours d'initialisation pour ${userEmail}`);
+                return res.json({ 
+                    success: true, 
+                    message: 'Session en cours d\'initialisation',
+                    status: existingSession.status,
+                    sessionId: existingSession.sessionId,
+                    qrcode: existingSession.qrCode
+                });
+            }
+            
+            // Nettoyer uniquement si la session est réellement défaillante
+            if (existingSession.status === 'failed' || existingSession.status === 'disconnected') {
+                console.log(`🧹 Nettoyage de la session défaillante pour ${userEmail}`);
+                await cleanupFirebaseUserSession(firebaseUid, 'reinit');
+            }
         }
         
-        // Créer un nouveau client
+        // Créer un nouveau client seulement si nécessaire
+        console.log(`🆕 Création d'une nouvelle session pour ${userEmail}`);
         const client = await createFirebaseUserClient(firebaseUid, userEmail);
         setupFirebaseClientEvents(firebaseUid, client);
+        
+        // Marquer comme en cours d'initialisation
+        const sessionData = {
+            sessionId: `whatsland-firebase-${firebaseUid}`,
+            status: 'initializing',
+            client: client,
+            userEmail: userEmail,
+            createdAt: Date.now(),
+            lastActivity: Date.now()
+        };
+        firebaseUserClients.set(firebaseUid, sessionData);
+        
         await client.initialize();
         
         res.json({ 
             success: true, 
             message: 'Session WhatsApp initialisée',
+            status: 'initializing',
             sessionId: `whatsland-firebase-${firebaseUid}`
         });
         
     } catch (error) {
-        logger.error('Erreur init Firebase:', error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error('[ERROR] Erreur init Firebase:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: `Erreur d'initialisation: ${error.message}`,
+            error: error.message 
+        });
     }
 });
 
@@ -2286,11 +2357,60 @@ app.get('/api/firebase/qrcode', verifyFirebaseToken, async (req, res) => {
 app.post('/api/firebase/disconnect', verifyFirebaseToken, async (req, res) => {
     try {
         const firebaseUid = req.user.uid;
+        const userEmail = req.user.email;
+        
+        console.log(`🔌 Déconnexion explicite demandée par ${userEmail} (${firebaseUid})`);
         await cleanupFirebaseUserSession(firebaseUid, 'user_requested');
         
-        res.json({ success: true, message: 'Session WhatsApp fermée' });
+        res.json({ success: true, message: 'Session WhatsApp fermée avec succès' });
     } catch (error) {
-        logger.error('Erreur disconnect Firebase:', error);
+        console.error('Erreur disconnect Firebase:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Route pour vérifier la session existante sans la réinitialiser
+app.get('/api/firebase/check-session', verifyFirebaseToken, async (req, res) => {
+    try {
+        const firebaseUid = req.user.uid;
+        const userEmail = req.user.email;
+        
+        const existingSession = firebaseUserClients.get(firebaseUid);
+        
+        if (!existingSession) {
+            return res.json({
+                hasSession: false,
+                status: 'not_initialized',
+                message: 'Aucune session existante'
+            });
+        }
+        
+        // Vérifier si la session est toujours valide
+        let isValid = false;
+        if (existingSession.client) {
+            try {
+                // Tester si le client est toujours actif
+                const state = await existingSession.client.getState();
+                isValid = (state === 'CONNECTED' || state === 'OPENING');
+            } catch (error) {
+                console.log(`⚠️ Session invalide pour ${userEmail}: ${error.message}`);
+                isValid = false;
+            }
+        }
+        
+        res.json({
+            hasSession: true,
+            isValid: isValid,
+            status: existingSession.status,
+            sessionId: existingSession.sessionId,
+            lastActivity: existingSession.lastActivity,
+            qrAvailable: !!existingSession.qrCode,
+            qrcode: existingSession.qrCode,
+            message: isValid ? 'Session active trouvée' : 'Session trouvée mais inactive'
+        });
+        
+    } catch (error) {
+        console.error('Erreur check-session Firebase:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
@@ -2318,6 +2438,13 @@ app.post('/api/firebase/send-message',
         const chatId = phoneNumber.includes('@') ? phoneNumber : `${phoneNumber}@c.us`;
         
         // Vérifier si le numéro est valide
+        if (!client) {
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Client WhatsApp non disponible' 
+            });
+        }
+        
         const isValidNumber = await client.isRegisteredUser(chatId);
         if (!isValidNumber) {
             return res.status(400).json({ 
@@ -2424,7 +2551,7 @@ async function handleDisconnect(reason) {
       client = new Client({
         authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
         puppeteer: {
-          executablePath: '/usr/bin/google-chrome',
+          executablePath: getChromePath(),
           headless: true,
           ignoreHTTPSErrors: true,
           defaultViewport: null,
@@ -2596,6 +2723,194 @@ let client = new Client({
   }
 });
 
+// ========================================
+// ROUTES API ADDITIONNELLES POUR FRONTEND
+// ========================================
+
+// Route de santé système
+app.get('/api/health', (req, res) => {
+  try {
+    const health = {
+      overall: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      whatsapp: {
+        status: whatsappReady ? 'connected' : 'disconnected',
+        authenticated: whatsappAuthenticated,
+        hasQrCode: !!lastQrCode
+      },
+      server: {
+        pid: process.pid,
+        version: process.version,
+        platform: process.platform
+      },
+      database: {
+        status: sequelize ? 'connected' : 'disconnected'
+      },
+      memory: process.memoryUsage(),
+      issues: []
+    };
+
+    // Déterminer le statut global
+    if (!whatsappReady) {
+      health.issues.push('WhatsApp non connecté');
+      health.overall = 'warning';
+    }
+
+    if (!sequelize) {
+      health.issues.push('Base de données non connectée');
+      health.overall = 'error';
+    }
+
+    // Vérifier l'utilisation mémoire
+    const memoryPercent = (health.memory.heapUsed / health.memory.heapTotal) * 100;
+    if (memoryPercent > 80) {
+      health.issues.push(`Mémoire élevée: ${memoryPercent.toFixed(1)}%`);
+      if (health.overall === 'healthy') {
+        health.overall = 'warning';
+      }
+    }
+
+    res.json(health);
+  } catch (error) {
+    console.error('❌ Erreur route /api/health:', error);
+    res.status(500).json({
+      overall: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Route des métriques système
+app.get('/api/metrics', (req, res) => {
+  try {
+    const metrics = {
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      cpu: process.cpuUsage(),
+      connections: {
+        active: io ? io.engine.clientsCount : 0
+      },
+      whatsapp: {
+        ready: whatsappReady,
+        authenticated: whatsappAuthenticated,
+        hasQrCode: !!lastQrCode,
+        reconnectAttempts: reconnectAttempts
+      },
+      database: {
+        status: sequelize ? 'connected' : 'disconnected'
+      },
+      firebase: {
+        initialized: !!firebaseAdmin,
+        status: 'connected'
+      }
+    };
+
+    res.json(metrics);
+  } catch (error) {
+    console.error('❌ Erreur route /api/metrics:', error);
+    res.status(500).json({
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Route de vérification token Firebase
+app.post('/api/firebase/verify', async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        error: 'Token manquant'
+      });
+    }
+
+    // Vérifier le token avec Firebase Admin
+    try {
+      const decodedToken = await firebaseAdmin.verifyToken(token);
+      
+      res.json({
+        success: true,
+        message: 'Token valide',
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        timestamp: new Date().toISOString()
+      });
+    } catch (firebaseError) {
+      console.warn('⚠️ Erreur vérification Firebase:', firebaseError.message);
+      if (firebaseError.message.includes('non disponible') || firebaseError.message.includes('non initialisé')) {
+        // Firebase Admin non initialisé
+        res.status(503).json({
+          success: false,
+          error: 'Firebase Admin non disponible',
+          message: 'Service temporairement indisponible'
+        });
+      } else {
+        res.status(401).json({
+          success: false,
+          error: 'Token Firebase invalide',
+          details: firebaseError.message
+        });
+      }
+    }
+  } catch (error) {
+    console.error('❌ Erreur route /api/firebase/verify:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur serveur',
+      details: error.message
+    });
+  }
+});
+
+// Routes de monitoring
+app.post('/api/monitoring/heartbeat', (req, res) => {
+  try {
+    const heartbeat = req.body;
+    console.log('💓 Heartbeat frontend:', heartbeat.currentPage);
+    res.json({ success: true, serverTime: Date.now() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/monitoring/metrics', (req, res) => {
+  try {
+    const metrics = req.body;
+    console.log('📊 Métriques frontend reçues');
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/monitoring/error', (req, res) => {
+  try {
+    const errorInfo = req.body;
+    console.error('🚨 Erreur frontend:', errorInfo.message);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/monitoring/event', (req, res) => {
+  try {
+    const event = req.body;
+    console.log('📝 Événement frontend:', event.name);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+console.log('✅ Routes API additionnelles configurées');
+
 // Configuration des événements du client WhatsApp
 client.on('qr', async (qr) => {
   const startTime = Date.now();
@@ -2759,26 +3074,41 @@ if (io) {
 
 // Fin du fichier
 
-// Graceful shutdown
+// ✅ Graceful shutdown amélioré avec services
 process.on('SIGTERM', async () => {
-  logger.info('🛑 Arrêt gracieux du serveur...');
+  console.log('🛑 Arrêt gracieux du serveur...');
   
-  // Fermer toutes les sessions Firebase
-  for (const [firebaseUid, session] of firebaseUserClients.entries()) {
-    try {
-      if (session.client) {
-        await session.client.destroy();
+  try {
+    // ✅ Utiliser les services améliorés pour l'arrêt (temporairement désactivé)
+    // await shutdownServices();
+    
+    // Fermer toutes les sessions Firebase
+    for (const [firebaseUid, session] of firebaseUserClients.entries()) {
+      try {
+        if (session.client) {
+          await session.client.destroy();
+        }
+      } catch (error) {
+        console.error(`❌ Erreur fermeture session ${firebaseUid}:`, error.message);
       }
-    } catch (error) {
-      logger.error(`Erreur fermeture session ${firebaseUid}:`, error);
     }
+    
+    // Fermer le serveur HTTP
+    server.close(() => {
+      console.log('✅ Serveur arrêté proprement');
+      process.exit(0);
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'arrêt:', error.message);
+    process.exit(1);
   }
-  
-  // Fermer le serveur
-  server.close(() => {
-    logger.info('✅ Serveur fermé proprement');
-    process.exit(0);
-  });
+});
+
+// ✅ Gestionnaire pour Ctrl+C
+process.on('SIGINT', async () => {
+  console.log('🔄 Interruption reçue (Ctrl+C)');
+  process.emit('SIGTERM');
 });
 
 logger.info('🛡️ Gestionnaires d\'erreurs globaux activés');

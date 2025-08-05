@@ -1,5 +1,11 @@
 {
-  "watch": ["*.js", "routes/*.js", "config/*.js", "database/*.js"],
+  "watch": [
+    "*.js",
+    "routes/*.js", 
+    "config/*.js", 
+    "database/*.js",
+    "services/*.js"
+  ],
   "ignore": [
     "node_modules/",
     "session_data/",
@@ -7,12 +13,39 @@
     "logs/",
     "test_media/",
     ".wwebjs_auth/",
-    ".wwebjs_cache/"
+    ".wwebjs_cache/",
+    ".wwebjs_*",
+    "*.lock",
+    "*.log",
+    "chrome_debug.log",
+    "Default/",
+    ".chromium-browser-snapshots/",
+    "firebase-service-account.json",
+    "package-lock.json",
+    "npm-debug.log*",
+    "yarn-debug.log*",
+    "yarn-error.log*"
   ],
   "ext": "js,json",
-  "delay": 1000,
-  "verbose": true,
+  "delay": 2000,
+  "verbose": false,
+  "legacyWatch": false,
+  "signal": "SIGTERM",
+  "restartable": "rs",
   "env": {
-    "NODE_ENV": "development"
-  }
+    "NODE_ENV": "development",
+    "NODE_OPTIONS": "--expose-gc --max-old-space-size=2048",
+    "UV_THREADPOOL_SIZE": "4"
+  },
+  "events": {
+    "start": "echo '🚀 Démarrage du serveur WhatsLand...'",
+    "restart": "echo '🔄 Redémarrage du serveur...'",
+    "crash": "echo '💥 Crash détecté - Redémarrage automatique...'",
+    "exit": "echo '🛑 Arrêt du serveur WhatsLand'"
+  },
+  "nodeArgs": [
+    "--expose-gc",
+    "--max-old-space-size=2048",
+    "--optimize-for-size"
+  ]
 } 

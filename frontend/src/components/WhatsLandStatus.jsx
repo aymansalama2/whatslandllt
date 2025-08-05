@@ -144,11 +144,64 @@ export default function WhatsLandStatus() {
     };
   }, [currentUser]);
 
+  // Vérifier s'il existe une session existante
+  const checkExistingSession = async () => {
+    if (!currentUser) return null;
+    
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/firebase/check-session`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      return data;
+      
+    } catch (error) {
+      console.error('❌ Erreur vérification session:', error);
+      return null;
+    }
+  };
+
   // Initialiser la session WhatsApp Firebase
   const initializeWhatsAppSession = async () => {
     if (!currentUser) return;
     
     try {
+      setStatus('checking');
+      setStatusMessage('Vérification de votre session existante...');
+      
+      // D'abord, vérifier s'il existe une session
+      const existingSession = await checkExistingSession();
+      
+      if (existingSession && existingSession.hasSession) {
+        console.log('🔍 Session existante trouvée:', existingSession);
+        
+        // Si la session est valide et prête, la réutiliser
+        if (existingSession.isValid && (existingSession.status === 'ready' || existingSession.status === 'authenticated')) {
+          console.log('✅ Réutilisation de la session existante');
+          setStatus(existingSession.status);
+          setStatusMessage('Session WhatsApp active réutilisée');
+          if (existingSession.qrcode) {
+            setQrCode(existingSession.qrcode);
+          }
+          checkFirebaseStatus();
+          return;
+        }
+        
+        // Si la session existe mais n'est pas valide, informer l'utilisateur
+        if (!existingSession.isValid && existingSession.status !== 'ready') {
+          console.log('⚠️ Session existante mais non active, nouvelle initialisation...');
+          setStatusMessage('Session trouvée mais inactive, reconnexion...');
+        }
+      } else {
+        console.log('🆕 Aucune session existante, création d\'une nouvelle...');
+        setStatusMessage('Création d\'une nouvelle session WhatsApp...');
+      }
+      
       setStatus('initializing');
       setStatusMessage('Initialisation de votre session WhatsApp...');
       
@@ -165,6 +218,11 @@ export default function WhatsLandStatus() {
       
       if (data.success) {
         console.log('✅ Session WhatsApp Firebase initialisée:', data);
+        if (data.status === 'ready' || data.status === 'authenticated') {
+          setStatusMessage('Session WhatsApp prête');
+        } else {
+          setStatusMessage('Session en cours d\'initialisation');
+        }
         checkFirebaseStatus();
       } else {
         setStatus('error');
@@ -175,6 +233,42 @@ export default function WhatsLandStatus() {
       console.error('❌ Erreur initialisation Firebase:', error);
       setStatus('error');
       setStatusMessage('Erreur lors de l\'initialisation de votre session');
+    }
+  };
+
+  // Déconnecter explicitement la session WhatsApp
+  const disconnectWhatsAppSession = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setStatus('disconnecting');
+      setStatusMessage('Déconnexion de votre session WhatsApp...');
+      
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/firebase/disconnect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Session WhatsApp déconnectée:', data);
+        setStatus('disconnected');
+        setStatusMessage('Session WhatsApp déconnectée');
+        setQrCode(null);
+      } else {
+        setStatus('error');
+        setStatusMessage(data.message || 'Erreur lors de la déconnexion');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur déconnexion Firebase:', error);
+      setStatus('error');
+      setStatusMessage('Erreur lors de la déconnexion');
     }
   };
 
@@ -320,7 +414,10 @@ export default function WhatsLandStatus() {
         return FiSquare;
       case 'connecting':
       case 'initializing':
+      case 'checking':
         return FiLoader;
+      case 'disconnecting':
+        return FiWifiOff;
       default:
         return FiClock;
     }
@@ -359,6 +456,17 @@ export default function WhatsLandStatus() {
           textColor: 'text-blue-800',
           iconColor: 'text-blue-600',
           pulseColor: 'bg-blue-400'
+        };
+      case 'checking':
+      case 'disconnecting':
+        return {
+          color: 'purple',
+          bgGradient: 'from-purple-500 via-purple-600 to-violet-700',
+          cardBg: 'from-purple-50 to-violet-50',
+          borderColor: 'border-purple-200',
+          textColor: 'text-purple-800',
+          iconColor: 'text-purple-600',
+          pulseColor: 'bg-purple-400'
         };
       default:
         return {
@@ -766,6 +874,27 @@ export default function WhatsLandStatus() {
             <FiRefreshCw size={window.innerWidth < 640 ? 16 : 20} />
             <span className="text-sm sm:text-base">
               Vérifier la connexion
+            </span>
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Bouton de déconnexion pour les sessions actives */}
+      {(status === 'connected' || status === 'authenticated') && (
+        <motion.div
+          variants={itemVariants}
+          className="flex justify-center"
+        >
+          <motion.button
+            onClick={disconnectWhatsAppSession}
+            disabled={status === 'disconnecting'}
+            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 sm:space-x-3"
+            whileHover={{ scale: status !== 'disconnecting' ? 1.02 : 1 }}
+            whileTap={{ scale: status !== 'disconnecting' ? 0.98 : 1 }}
+          >
+            <FiWifiOff className={status === 'disconnecting' ? 'animate-pulse' : ''} size={window.innerWidth < 640 ? 16 : 20} />
+            <span className="text-sm sm:text-base">
+              {status === 'disconnecting' ? 'Déconnexion...' : 'Se déconnecter de WhatsApp'}
             </span>
           </motion.button>
         </motion.div>
