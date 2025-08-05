@@ -1916,6 +1916,23 @@ async function fullWhatsAppReset() {
     // Nettoyer les anciens répertoires Chrome
     cleanupOldChromeDirectories();
     
+    // Démarrer Xvfb si disponible
+    if (process.platform === 'linux') {
+      try {
+        const { exec } = require('child_process');
+        await new Promise((resolve) => {
+          exec('pkill Xvfb; export DISPLAY=:99; Xvfb :99 -ac -screen 0 1280x1024x24 &', () => {
+            console.log('🖥️ Xvfb démarré pour Chrome headless');
+            process.env.DISPLAY = ':99';
+            resolve();
+          });
+        });
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Attendre que Xvfb soit prêt
+      } catch (err) {
+        console.log('⚠️ Impossible de démarrer Xvfb:', err.message);
+      }
+    }
+
     // Créer un nouveau client
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
@@ -1924,9 +1941,9 @@ async function fullWhatsAppReset() {
         executablePath: getChromePath(),
         headless: true,
         ignoreHTTPSErrors: true,
-        protocolTimeout: 0,
+        protocolTimeout: 60000,
         defaultViewport: null,
-        timeout: 0,
+        timeout: 60000,
         handleSIGINT: false,
         handleSIGTERM: false,
         handleSIGHUP: false,
@@ -1950,7 +1967,19 @@ async function fullWhatsAppReset() {
             '--disable-translate',
             '--metrics-recording-only',
             '--no-crash-upload',
-            '--use-mock-keychain'
+            '--use-mock-keychain',
+            '--disable-web-security',
+            '--disable-features=site-per-process',
+            '--aggressive-cache-discard',
+            '--disable-background-timer-throttling',
+            '--disable-renderer-backgrounding',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-ipc-flooding-protection',
+            '--force-color-profile=srgb',
+            '--single-process',
+            '--no-zygote',
+            '--disable-crash-reporter',
+            '--virtual-time-budget=5000'
         ]
       }
     });
