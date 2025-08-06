@@ -79,15 +79,34 @@ const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Configuration de base
+<<<<<<< HEAD
 app.set('trust proxy', false); // Désactivé pour éviter les problèmes de rate limiting
+=======
+app.set('trust proxy', false);
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
 app.disable('x-powered-by');
 
-// Configuration CORS pour Express
+// Configuration CORS pour Express - Optimisée pour production
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://whatsland.click',
+    'https://whatsland.click',
+    'http://www.whatsland.click',
+    'https://www.whatsland.click',
+    'http://92.113.31.157:3000'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
+  
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -97,10 +116,18 @@ app.use((req, res, next) => {
 // Créer le serveur HTTP
 const server = http.createServer(app);
 
-// Configurer Socket.IO avec CORS
+// Configurer Socket.IO avec CORS - Optimisé pour production
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://whatsland.click',
+      'https://whatsland.click',
+      'http://www.whatsland.click',
+      'https://www.whatsland.click',
+      'http://92.113.31.157:3000'
+    ],
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -133,8 +160,50 @@ const ExcelJS = require('exceljs');
 
 // Configuration Firebase Admin
 const firebaseAdmin = require('./firebase-admin-config');
+<<<<<<< HEAD
 const admin = require('firebase-admin');
 const { db, auth: firebaseAuth, realtimeDb } = firebaseAdmin;
+=======
+
+// Fonction utilitaire pour Firebase Realtime Database
+async function updateFirebaseSession(firebaseUid, data) {
+    try {
+        const realtimeDb = await firebaseAdmin.realtimeDb;
+        const admin = await firebaseAdmin.admin;
+        
+        // Ajouter les timestamps Firebase si nécessaire
+        if (data.lastActivity === 'SERVER_TIMESTAMP') {
+            data.lastActivity = 'SERVER_TIMESTAMP';
+        }
+        if (data.createdAt === 'SERVER_TIMESTAMP') {
+            data.createdAt = 'SERVER_TIMESTAMP';
+        }
+        
+        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update(data);
+    } catch (error) {
+        console.warn('⚠️ Erreur mise à jour Firebase:', error.message);
+    }
+}
+
+async function setFirebaseSession(firebaseUid, data) {
+    try {
+        const realtimeDb = await firebaseAdmin.realtimeDb;
+        const admin = await firebaseAdmin.admin;
+        
+        // Ajouter les timestamps Firebase si nécessaire
+        if (data.lastActivity === 'SERVER_TIMESTAMP') {
+            data.lastActivity = 'SERVER_TIMESTAMP';
+        }
+        if (data.createdAt === 'SERVER_TIMESTAMP') {
+            data.createdAt = 'SERVER_TIMESTAMP';
+        }
+        
+        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).set(data);
+    } catch (error) {
+        console.warn('⚠️ Erreur sauvegarde Firebase:', error.message);
+    }
+}
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
 
 // Nettoyage des anciens répertoires Chrome temporaires
 function cleanupOldChromeDirectories() {
@@ -593,13 +662,18 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
             sessionId: `whatsland-firebase-${firebaseUid}`
         });
 
+<<<<<<< HEAD
         // Sauvegarder dans Firebase Realtime Database (si disponible)
         await setFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
+=======
+        // Sauvegarder dans Firebase Realtime Database
+        await setFirebaseSession(firebaseUid, {
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
             sessionId: `whatsland-firebase-${firebaseUid}`,
             status: 'initializing',
             userEmail: userEmail,
-            lastActivity: admin.database.ServerValue.TIMESTAMP,
-            createdAt: admin.database.ServerValue.TIMESTAMP,
+            lastActivity: 'SERVER_TIMESTAMP',
+            createdAt: 'SERVER_TIMESTAMP',
             isActive: true
         });
 
@@ -624,9 +698,13 @@ function setupFirebaseClientEvents(firebaseUid, client) {
                 userSession.lastActivity = Date.now();
                 
                 // Mettre à jour Firebase
+<<<<<<< HEAD
                 await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
+=======
+                await updateFirebaseSession(firebaseUid, {
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
                     status: 'waiting_qr',
-                    lastActivity: admin.database.ServerValue.TIMESTAMP
+                    lastActivity: 'SERVER_TIMESTAMP'
                 });
                 
                 // Envoyer le QR code à l'utilisateur spécifique
@@ -651,10 +729,14 @@ function setupFirebaseClientEvents(firebaseUid, client) {
                 const phoneNumber = info ? info.wid.user : null;
                 
                 // Mettre à jour Firebase
+<<<<<<< HEAD
                 await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
+=======
+                await updateFirebaseSession(firebaseUid, {
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
                     status: 'ready',
                     phoneNumber: phoneNumber,
-                    lastActivity: admin.database.ServerValue.TIMESTAMP
+                    lastActivity: 'SERVER_TIMESTAMP'
                 });
                 
                 io.to(`firebase-user-${firebaseUid}`).emit('ready', { phoneNumber });
@@ -667,9 +749,13 @@ function setupFirebaseClientEvents(firebaseUid, client) {
 
     client.on('authenticated', async () => {
         try {
+<<<<<<< HEAD
             await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
+=======
+            await updateFirebaseSession(firebaseUid, {
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
                 status: 'authenticated',
-                lastActivity: admin.database.ServerValue.TIMESTAMP
+                lastActivity: 'SERVER_TIMESTAMP'
             });
             
             io.to(`firebase-user-${firebaseUid}`).emit('authenticated');
@@ -681,9 +767,13 @@ function setupFirebaseClientEvents(firebaseUid, client) {
 
     client.on('auth_failure', async (msg) => {
         try {
+<<<<<<< HEAD
             await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
+=======
+            await updateFirebaseSession(firebaseUid, {
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
                 status: 'auth_failure',
-                lastActivity: admin.database.ServerValue.TIMESTAMP,
+                lastActivity: 'SERVER_TIMESTAMP',
                 authFailureReason: msg
             });
             
@@ -743,10 +833,14 @@ async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
             
             // Mettre à jour Firebase
             try {
+<<<<<<< HEAD
                 await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
+=======
+                await updateFirebaseSession(firebaseUid, {
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
                     status: 'disconnected',
                     isActive: false,
-                    disconnectedAt: admin.database.ServerValue.TIMESTAMP,
+                    disconnectedAt: 'SERVER_TIMESTAMP',
                     disconnectReason: reason,
                     cleanupSuccess: true
                 });
@@ -756,10 +850,14 @@ async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
                 // Réessayer une fois
                 try {
                     await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
+<<<<<<< HEAD
                     await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
+=======
+                    await updateFirebaseSession(firebaseUid, {
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
                         status: 'disconnected',
                         isActive: false,
-                        disconnectedAt: admin.database.ServerValue.TIMESTAMP,
+                        disconnectedAt: 'SERVER_TIMESTAMP',
                         disconnectReason: reason,
                         cleanupSuccess: true
                     });
@@ -1847,7 +1945,11 @@ async function killChromiumProcesses() {
     logger.debug('🔄 Nettoyage des processus Chrome...');
 
     // Tuer tous les processus Chrome/Chromium
-    const commands = [
+    const commands = process.platform === 'win32' ? [
+      'taskkill /F /IM chrome.exe /T',
+      'taskkill /F /IM chromium.exe /T',
+      'del /F /Q %TEMP%\\puppeteer*'
+    ] : [
       'pkill -f chrome',
       'pkill -f chromium',
       'pkill -f "Google Chrome"',
@@ -1979,6 +2081,23 @@ async function fullWhatsAppReset() {
     // Nettoyer les anciens répertoires Chrome
     cleanupOldChromeDirectories();
     
+    // Démarrer Xvfb si disponible
+    if (process.platform === 'linux') {
+      try {
+        const { exec } = require('child_process');
+        await new Promise((resolve) => {
+          exec('pkill Xvfb; export DISPLAY=:99; Xvfb :99 -ac -screen 0 1280x1024x24 &', () => {
+            console.log('🖥️ Xvfb démarré pour Chrome headless');
+            process.env.DISPLAY = ':99';
+            resolve();
+          });
+        });
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Attendre que Xvfb soit prêt
+      } catch (err) {
+        console.log('⚠️ Impossible de démarrer Xvfb:', err.message);
+      }
+    }
+
     // Créer un nouveau client
     client = new Client({
       authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
@@ -1987,9 +2106,9 @@ async function fullWhatsAppReset() {
         executablePath: getChromePath(),
         headless: true,
         ignoreHTTPSErrors: true,
-        protocolTimeout: 0,
+        protocolTimeout: 60000,
         defaultViewport: null,
-        timeout: 0,
+        timeout: 60000,
         handleSIGINT: false,
         handleSIGTERM: false,
         handleSIGHUP: false,
@@ -2013,7 +2132,19 @@ async function fullWhatsAppReset() {
             '--disable-translate',
             '--metrics-recording-only',
             '--no-crash-upload',
-            '--use-mock-keychain'
+            '--use-mock-keychain',
+            '--disable-web-security',
+            '--disable-features=site-per-process',
+            '--aggressive-cache-discard',
+            '--disable-background-timer-throttling',
+            '--disable-renderer-backgrounding',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-ipc-flooding-protection',
+            '--force-color-profile=srgb',
+            '--single-process',
+            '--no-zygote',
+            '--disable-crash-reporter',
+            '--virtual-time-budget=5000'
         ]
       }
     });
@@ -2553,8 +2684,13 @@ app.post('/api/firebase/send-message',
         
         // Mettre à jour l'activité et les statistiques
         userSession.lastActivity = Date.now();
+<<<<<<< HEAD
         await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
             lastActivity: admin.database.ServerValue.TIMESTAMP,
+=======
+        await updateFirebaseSession(firebaseUid, {
+            lastActivity: 'SERVER_TIMESTAMP',
+>>>>>>> d9339f4a87a9dd8b0e67e9c093f4e0cf49e26be7
             messagesSent: admin.database.ServerValue.increment(1)
         });
         

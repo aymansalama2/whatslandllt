@@ -29,8 +29,9 @@ const getApiUrl = () => {
     }
     
     if (hostname.includes('whatsland.click')) {
-      const url = `${window.location.protocol}//${hostname}:5001`;
-      console.log('🔧 Domaine production détecté:', url);
+      // Use the same domain without port - nginx will proxy to backend
+      const url = `${window.location.protocol}//${hostname}`;
+      console.log('🔧 Domaine production détecté (proxy via nginx):', url);
       return url;
     }
   }
