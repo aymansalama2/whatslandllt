@@ -35,6 +35,17 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const sessionManager = require('./services/whatsappSessionManager');
+const qrcode = require('qrcode');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
+const { User, PhoneNumber, Campaign, syncDatabase } = require('./database/models');
+const sequelize = require('./database/config');
+const { Op } = require('sequelize');
+const ExcelJS = require('exceljs');
 
 // Helper function pour Firebase Realtime Database
 async function updateFirebaseRealtimeDB(path, data) {
@@ -120,17 +131,6 @@ app.get('/test', (req, res) => {
     headers: req.headers
   });
 });
-const qrcode = require('qrcode');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const { body, validationResult } = require('express-validator');
-const { User, PhoneNumber, Campaign, syncDatabase } = require('./database/models');
-const sequelize = require('./database/config');
-const { Op } = require('sequelize');
-const ExcelJS = require('exceljs');
 
 // Configuration Firebase Admin
 const firebaseAdmin = require('./firebase-admin-config');
