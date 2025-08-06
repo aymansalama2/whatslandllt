@@ -1,7 +1,8 @@
 require('dotenv').config();
 
 // Augmenter les limites des listeners pour éviter les warnings
-process.setMaxListeners(20);
+process.setMaxListeners(0); // Unlimited listeners for process
+require('events').EventEmitter.defaultMaxListeners = 0;
 
 // Optimisation des performances Node.js
 process.env.NODE_ENV = 'production';
@@ -79,7 +80,7 @@ const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Configuration de base
-app.set('trust proxy', false); // Désactivé pour éviter les problèmes de rate limiting
+app.set('trust proxy', true); // Activé pour gérer les requêtes depuis Nginx
 app.disable('x-powered-by');
 
 // Configuration CORS pour Express
@@ -280,7 +281,13 @@ const apiLimiter = rateLimit({
     retryAfter: '15 minutes'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Configuration pour proxy (Nginx)
+  trustProxy: true,
+  keyGenerator: (req) => {
+    // Utiliser l'IP du client depuis X-Real-IP ou X-Forwarded-For ou l'IP directe
+    return req.ip || req.connection.remoteAddress || 'anonymous';
+  }
 });
 
 // Rate limiting spécial pour Firebase APIs
@@ -290,6 +297,11 @@ const firebaseLimiter = rateLimit({
   message: {
     error: 'Limite de sessions WhatsApp atteinte, veuillez réessayer plus tard.',
     retryAfter: '5 minutes'
+  },
+  // Configuration pour proxy (Nginx)
+  trustProxy: true,
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress || 'anonymous';
   }
 });
 
@@ -300,6 +312,11 @@ const statusLimiter = rateLimit({
   message: {
     error: 'Trop de requêtes de monitoring, veuillez réessayer plus tard.',
     retryAfter: '1 minute'
+  },
+  // Configuration pour proxy (Nginx)
+  trustProxy: true,
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress || 'anonymous';
   }
 });
 
@@ -1844,29 +1861,41 @@ async function killChromiumProcesses() {
     const util = require('util');
     const execAsync = util.promisify(exec);
 
-    logger.debug('🔄 Nettoyage des processus Chrome...');
+    console.log('🔄 Nettoyage des processus Chrome...');
 
-    // Tuer tous les processus Chrome/Chromium
+    // Tuer tous les processus Chrome/Chromium avec plus d'agressivité
     const commands = [
-      'pkill -f chrome',
-      'pkill -f chromium',
-      'pkill -f "Google Chrome"',
+      'pkill -9 -f chrome',
+      'pkill -9 -f chromium',
+      'pkill -9 -f "Google Chrome"',
+      'pkill -9 -f "google-chrome"',
+      'pkill -9 -f puppeteer',
+      'killall -9 chrome 2>/dev/null || true',
+      'killall -9 chromium 2>/dev/null || true',
+      'killall -9 google-chrome-stable 2>/dev/null || true',
       'rm -rf /tmp/.org.chromium.Chromium*',
       'rm -rf /tmp/.com.google.Chrome*',
-      'rm -rf /tmp/puppeteer_dev_chrome_profile-*'
+      'rm -rf /tmp/puppeteer_dev_chrome_profile-*',
+      'rm -rf /tmp/chrome-user-data-*',
+      'rm -rf /tmp/chromium-*',
+      'rm -rf /dev/shm/.org.chromium.Chromium*',
+      'rm -rf /dev/shm/.com.google.Chrome*'
     ];
 
     for (const cmd of commands) {
       try {
-        await execAsync(cmd);
+        await execAsync(cmd, { timeout: 5000 });
       } catch (err) {
         // Ignorer les erreurs car certaines commandes peuvent échouer si les processus n'existent pas
       }
     }
 
-    logger.debug('✅ Nettoyage des processus Chrome terminé');
+    // Attendre un peu pour s'assurer que tous les processus sont terminés
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    console.log('✅ Processus Chrome tués avec succès');
   } catch (error) {
-    logger.error('❌ Erreur lors du nettoyage des processus Chrome:', error);
+    console.error('❌ Erreur lors du nettoyage des processus Chrome:', error);
   }
 }
 
@@ -1979,30 +2008,43 @@ async function fullWhatsAppReset() {
     // Nettoyer les anciens répertoires Chrome
     cleanupOldChromeDirectories();
     
-    // Créer un nouveau client
+    // Créer un nouveau client avec configuration optimisée pour CentOS
     client = new Client({
-      authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}` }),
+      authStrategy: new LocalAuth({ 
+        clientId: `whatsland-${Date.now()}`,
+        dataPath: path.join(__dirname, '.wwebjs_auth')
+      }),
       puppeteer: {
-        // Configuration compatible avec LocalAuth (pas de userDataDir personnalisé)
         executablePath: getChromePath(),
-        headless: true,
+        headless: 'new', // Utiliser le nouveau mode headless
         ignoreHTTPSErrors: true,
-        protocolTimeout: 0,
-        defaultViewport: null,
-        timeout: 0,
+        ignoreDefaultArgs: ['--disable-extensions'],
+        protocolTimeout: 120000, // 2 minutes timeout
+        defaultViewport: { width: 1280, height: 800 },
+        timeout: 120000,
         handleSIGINT: false,
         handleSIGTERM: false,
         handleSIGHUP: false,
+        pipe: false, // Utiliser TCP au lieu de pipe
+        dumpio: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
             '--disable-gpu',
+            '--disable-gpu-sandbox',
             '--disable-software-rasterizer',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
             '--disable-extensions',
             '--disable-default-apps',
-            '--window-size=1280,800',
-            '--remote-debugging-port=0',
+            '--disable-plugins',
+            '--disable-translate',
             '--disable-sync',
             '--disable-background-networking',
             '--disable-component-update',
@@ -2010,10 +2052,26 @@ async function fullWhatsAppReset() {
             '--disable-hang-monitor',
             '--disable-prompt-on-repost',
             '--disable-session-crashed-bubble',
-            '--disable-translate',
+            '--disable-web-security',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection',
+            '--disable-crash-reporter',
             '--metrics-recording-only',
             '--no-crash-upload',
-            '--use-mock-keychain'
+            '--use-mock-keychain',
+            '--memory-pressure-off',
+            '--max_old_space_size=4096',
+            '--disable-blink-features=AutomationControlled',
+            '--window-size=1280,800',
+            '--remote-debugging-port=0',
+            '--force-device-scale-factor=1',
+            '--disable-extensions-except=',
+            '--disable-plugins-discovery',
+            '--allow-running-insecure-content',
+            '--ignore-certificate-errors',
+            '--ignore-ssl-errors',
+            '--ignore-certificate-errors-spki-list',
+            '--disable-infobars'
         ]
       }
     });
@@ -2022,7 +2080,12 @@ async function fullWhatsAppReset() {
     client.removeAllListeners();
     
     // Augmenter la limite des listeners pour éviter les warnings
-    client.setMaxListeners(20);
+    client.setMaxListeners(0); // Illimité pour éviter les warnings
+    
+    // Nettoyer les listeners process existants pour éviter les accumulations
+    process.removeAllListeners('exit');
+    process.removeAllListeners('SIGINT');
+    process.removeAllListeners('SIGTERM');
     
     // Configurer les événements avec gestion des erreurs
     const setupEventHandlers = () => {
@@ -2121,26 +2184,43 @@ async function fullWhatsAppReset() {
           console.log(`⏳ Attente de 5 secondes avant nouvelle tentative...`);
           await new Promise(resolve => setTimeout(resolve, 5000));
           
-          // Recréer le client avec de nouveaux paramètres
+          // Recréer le client avec de nouveaux paramètres (configuration identique)
           client = new Client({
-            authStrategy: new LocalAuth({ clientId: `whatsland-${Date.now()}-retry-${retryCount}` }),
+            authStrategy: new LocalAuth({ 
+              clientId: `whatsland-${Date.now()}-retry-${retryCount}`,
+              dataPath: path.join(__dirname, '.wwebjs_auth')
+            }),
             puppeteer: {
               executablePath: getChromePath(),
               headless: 'new',
               ignoreHTTPSErrors: true,
-              protocolTimeout: 0,
-              defaultViewport: null,
-              timeout: 0,
+              ignoreDefaultArgs: ['--disable-extensions'],
+              protocolTimeout: 120000,
+              defaultViewport: { width: 1280, height: 800 },
+              timeout: 120000,
+              handleSIGINT: false,
+              handleSIGTERM: false,
+              handleSIGHUP: false,
+              pipe: false,
+              dumpio: false,
               args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process',
                 '--disable-gpu',
+                '--disable-gpu-sandbox',
                 '--disable-software-rasterizer',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
                 '--disable-extensions',
                 '--disable-default-apps',
-                '--window-size=1280,800',
-                '--remote-debugging-port=0',
+                '--disable-plugins',
+                '--disable-translate',
                 '--disable-sync',
                 '--disable-background-networking',
                 '--disable-component-update',
@@ -2148,10 +2228,26 @@ async function fullWhatsAppReset() {
                 '--disable-hang-monitor',
                 '--disable-prompt-on-repost',
                 '--disable-session-crashed-bubble',
-                '--disable-translate',
+                '--disable-web-security',
+                '--disable-features=TranslateUI',
+                '--disable-ipc-flooding-protection',
+                '--disable-crash-reporter',
                 '--metrics-recording-only',
                 '--no-crash-upload',
-                '--use-mock-keychain'
+                '--use-mock-keychain',
+                '--memory-pressure-off',
+                '--max_old_space_size=4096',
+                '--disable-blink-features=AutomationControlled',
+                '--window-size=1280,800',
+                '--remote-debugging-port=0',
+                '--force-device-scale-factor=1',
+                '--disable-extensions-except=',
+                '--disable-plugins-discovery',
+                '--allow-running-insecure-content',
+                '--ignore-certificate-errors',
+                '--ignore-ssl-errors',
+                '--ignore-certificate-errors-spki-list',
+                '--disable-infobars'
               ]
             }
           });
@@ -3089,13 +3185,23 @@ const checkServerHealth = async () => {
   };
   console.log(state);
 
-  // Si le client est initialisé mais qu'il n'y a pas de QR code après 10 secondes
-  if (state.clientInitialized && !state.hasQrCode && !state.whatsappReady) {
+  // Si le client est initialisé mais qu'il n'y a pas de QR code après 30 secondes
+  if (state.clientInitialized && !state.hasQrCode && !state.whatsappReady && !isInitializing) {
     const now = Date.now();
-    if (!global.lastReset || (now - global.lastReset) > 10000) {
-      console.log('⚠️ Pas de QR code après 10 secondes, réinitialisation...');
+    const resetInterval = 30000; // 30 secondes au lieu de 10
+    if (!global.lastReset || (now - global.lastReset) > resetInterval) {
+      console.log('⚠️ Pas de QR code après 30 secondes, réinitialisation...');
       global.lastReset = now;
-      await fullWhatsAppReset();
+      
+      // Éviter les réinitialisations multiples en parallèle
+      if (!global.isResetting) {
+        global.isResetting = true;
+        try {
+          await fullWhatsAppReset();
+        } finally {
+          global.isResetting = false;
+        }
+      }
     }
   }
 };
@@ -3107,34 +3213,85 @@ server.listen(PORT, HOST, () => {
     // Vérifier l'état initial
     checkServerHealth();
     
-    // Vérifier périodiquement
-    setInterval(checkServerHealth, 10000);
+    // Vérifier périodiquement et stocker la référence
+    global.healthCheckInterval = setInterval(checkServerHealth, 15000); // Augmenté à 15 secondes
+    
+    // Nettoyage périodique de la mémoire
+    global.gcInterval = setInterval(() => {
+      if (global.gc) {
+        try {
+          global.gc();
+          console.log('🧹 Garbage collection effectué');
+        } catch (e) {
+          // Silencieux si GC n'est pas disponible
+        }
+      }
+    }, 60000); // Toutes les minutes
+    
+    // Nettoyage périodique des processus Chrome orphelins
+    global.chromeCleanupInterval = setInterval(async () => {
+      try {
+        console.log('🔍 Vérification des processus Chrome orphelins...');
+        await killChromiumProcesses();
+      } catch (error) {
+        console.error('❌ Erreur lors du nettoyage des processus orphelins:', error);
+      }
+    }, 300000); // Toutes les 5 minutes
 });
 
-// Ajout d'un gestionnaire pour les arrêts gracieux
-process.on('SIGINT', async function() {
-  console.log('Arrêt gracieux...');
+// Gestionnaire pour les arrêts gracieux amélioré
+async function gracefulShutdown(signal) {
+  console.log(`🛑 Signal ${signal} reçu, arrêt gracieux en cours...`);
+  
   try {
-    // Attendre un peu avant de déconnecter WhatsApp
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Arrêter les intervalles de vérification
+    clearInterval(global.healthCheckInterval);
+    clearInterval(global.gcInterval);
+    clearInterval(global.chromeCleanupInterval);
     
-    // Déconnecter le client WhatsApp s'il est prêt
-    if (whatsappReady && client) {
-      console.log('Déconnexion de WhatsApp...');
-      await client.destroy();
-      console.log('WhatsApp déconnecté avec succès');
+    // Déconnecter le client WhatsApp s'il existe
+    if (client) {
+      console.log('🔌 Déconnexion de WhatsApp...');
+      try {
+        await client.destroy();
+        console.log('✅ WhatsApp déconnecté avec succès');
+      } catch (err) {
+        console.error('❌ Erreur lors de la déconnexion WhatsApp:', err);
+      }
+    }
+    
+    // Nettoyer les processus Chrome
+    console.log('🧹 Nettoyage des processus Chrome...');
+    await killChromiumProcesses();
+    
+    // Nettoyer les répertoires de session
+    await cleanSessionDirectory();
+    
+    // Fermer le serveur HTTP
+    if (server) {
+      console.log('🌐 Fermeture du serveur HTTP...');
+      server.close();
     }
     
     // Fermer la connexion à la base de données
-    await sequelize.close();
-    console.log('Connexion à la base de données fermée');
+    if (sequelize) {
+      console.log('🗄️ Fermeture de la base de données...');
+      await sequelize.close();
+      console.log('✅ Connexion à la base de données fermée');
+    }
     
+    console.log('✅ Arrêt gracieux terminé');
     process.exit(0);
   } catch (error) {
-    console.error('Erreur lors de l\'arrêt gracieux:', error);
+    console.error('❌ Erreur lors de l\'arrêt gracieux:', error);
     process.exit(1);
   }
-});
+}
+
+// Gérer plusieurs signaux d'arrêt
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGHUP', () => gracefulShutdown('SIGHUP'));
 
 // Gestionnaires d'erreurs globaux pour éviter les crashes
 process.on('uncaughtException', (error) => {
@@ -3170,11 +3327,34 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Promesse rejetée non gérée:', reason);
   console.error('Promesse:', promise);
   
+  // Vérifier si c'est une erreur Chrome/Puppeteer
+  const isChroméError = reason && reason.message && (
+    reason.message.includes('Target closed') ||
+    reason.message.includes('Protocol error') ||
+    reason.message.includes('Session closed') ||
+    reason.message.includes('browser has disconnected')
+  );
+  
+  if (isChroméError) {
+    console.log('🔧 Erreur Chrome détectée, nettoyage automatique...');
+    
+    // Nettoyer de manière asynchrone sans bloquer
+    Promise.resolve().then(async () => {
+      try {
+        await killChromiumProcesses();
+        await cleanSessionDirectory();
+        console.log('✅ Nettoyage automatique terminé');
+      } catch (cleanupError) {
+        console.error('❌ Erreur lors du nettoyage automatique:', cleanupError);
+      }
+    });
+  }
+  
   // Notifier le frontend de l'erreur
   if (io) {
     io.emit('error', { 
       message: 'Une erreur de promesse s\'est produite', 
-      details: reason 
+      details: reason && reason.message ? reason.message : reason
     });
   }
 });
