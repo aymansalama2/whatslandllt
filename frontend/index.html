@@ -6,17 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WhatsLand - Connectivité sans frontières</title>
     
-    <!-- Enhanced polyfill for browser compatibility -->
+    <!-- Enhanced polyfill for browser compatibility - Must be first -->
     <script>
-      // Polyfill pour documentPictureInPicture
-      if (typeof documentPictureInPicture === 'undefined') {
-        console.log('📱 Ajout du polyfill documentPictureInPicture');
-        window.documentPictureInPicture = {
-          requestWindow: function() {
-            return Promise.reject(new Error('Picture-in-Picture non supporté'));
+      // Polyfill pour documentPictureInPicture - Défini immédiatement
+      (function() {
+        if (typeof window.documentPictureInPicture === 'undefined') {
+          console.log('📱 Ajout du polyfill documentPictureInPicture');
+          window.documentPictureInPicture = {
+            requestWindow: function() {
+              return Promise.reject(new Error('Picture-in-Picture non supporté'));
+            }
+          };
+          
+          // Aussi définir sur l'objet global pour la compatibilité
+          if (typeof globalThis !== 'undefined') {
+            globalThis.documentPictureInPicture = window.documentPictureInPicture;
           }
-        };
-      }
+        }
+      })();
       
       // Enhanced error handling for compatibility
       const originalConsoleError = console.error;
