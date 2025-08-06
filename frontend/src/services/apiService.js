@@ -86,25 +86,54 @@ class ApiService {
   async handleResponseError(error) {
     const originalRequest = error.config;
 
-    // Éviter les boucles infinies
-    if (originalRequest._retry) {
-      return Promise.reject(error);
-    }
+    try {
+      // Éviter les boucles infinies
+      if (originalRequest._retry) {
+        throw error;
+      }
 
-    // Gestion des erreurs 401 (token expiré)
-    if (error.response?.status === 401 && this.authToken) {
-      return this.handleTokenRefresh(originalRequest);
-    }
+      // Gestion des erreurs 401 (token expiré)
+      if (error.response?.status === 401 && this.authToken) {
+        return await this.handleTokenRefresh(originalRequest);
+      }
 
-    // Retry automatique pour les erreurs réseau et 5xx
-    if (this.shouldRetry(error, originalRequest)) {
-      return this.retryRequest(originalRequest);
-    }
+      // Gestion des erreurs 503 (service indisponible)
+      if (error.response?.status === 503) {
+        console.warn('⚠️ Service temporairement indisponible, tentative de reconnexion...');
+        
+        // Attendre un peu plus longtemps avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Forcer une nouvelle tentative
+        originalRequest._retry = true;
+        return this.axios(originalRequest);
+      }
 
-    // Log de l'erreur
-    this.logError(error);
-    
-    return Promise.reject(this.formatError(error));
+      // Retry automatique pour les erreurs réseau et 5xx
+      if (this.shouldRetry(error, originalRequest)) {
+        return await this.retryRequest(originalRequest);
+      }
+
+      // Log de l'erreur
+      this.logError(error);
+      
+      // Émettre un événement pour le monitoring
+      window.dispatchEvent(new CustomEvent('api-error', {
+        detail: {
+          type: 'api',
+          error: this.formatError(error),
+          request: {
+            url: originalRequest.url,
+            method: originalRequest.method
+          }
+        }
+      }));
+
+      throw this.formatError(error);
+    } catch (handlingError) {
+      console.error('❌ Erreur lors de la gestion d\'erreur:', handlingError);
+      throw handlingError;
+    }
   }
 
   /**
@@ -308,7 +337,39 @@ class ApiService {
 
   // Auth
   async verifyFirebaseToken(token) {
-    return this.post(API_ENDPOINTS.firebase.verify, { token });
+    try {
+      // Vérifier que le token est valide
+      if (!token || typeof token !== 'string') {
+        throw new Error('Token invalide');
+      }
+
+      // D'abord vérifier la santé Firebase
+      try {
+        await this.get('/api/firebase/health', { timeout: 5000 });
+      } catch (healthError) {
+        console.warn('⚠️ Firebase health check échoué:', healthError.message);
+        // Continuer quand même avec la vérification du token
+      }
+
+      // Configurer la requête avec un timeout plus long
+      const config = {
+        timeout: API_TIMEOUTS.firebase,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      // Faire la requête avec retry automatique
+      return await this.post(API_ENDPOINTS.firebase.verify, { token }, config);
+    } catch (error) {
+      console.error('❌ Erreur vérification token Firebase:', error);
+      
+      // Formater l'erreur pour l'UI
+      const formattedError = this.formatError(error);
+      formattedError.context = { token: '***' };
+      
+      throw formattedError;
+    }
   }
 
   // WhatsApp

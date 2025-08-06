@@ -12,6 +12,7 @@ import {
 import { auth } from '../firebase/config';
 import apiService from '../services/apiService';
 import frontendMonitoringService from '../services/monitoringService';
+import { UserProvider } from './UserContext';
 
 const AuthContext = createContext();
 
@@ -129,8 +130,21 @@ export function AuthProvider({ children }) {
       const token = await result.user.getIdToken();
       apiService.setAuthToken(token);
       
-      // Vérifier avec le backend
-      await apiService.verifyFirebaseToken(token);
+      // Vérifier avec le backend (mode graceful)
+      try {
+        await apiService.verifyFirebaseToken(token);
+        console.log('✅ Token vérifié avec le backend lors du login');
+      } catch (verifyError) {
+        console.warn('⚠️ Vérification backend échouée lors du login, mais authentification Firebase réussie:', verifyError.message);
+        
+        // Ne pas échouer le login si c'est juste un problème de backend
+        if (verifyError.status === 503) {
+          console.log('🔄 Backend indisponible, login en mode local réussi');
+        } else {
+          // Pour d'autres erreurs, on peut choisir de continuer ou d'échouer
+          console.warn('⚠️ Erreur de vérification non-503, mais on continue:', verifyError.message);
+        }
+      }
       
       // Tracker l'événement
       frontendMonitoringService.trackEvent('user_login', {
@@ -341,11 +355,18 @@ export function AuthProvider({ children }) {
           const token = await user.getIdToken();
           apiService.setAuthToken(token);
           
-          // Vérifier avec le backend
+          // Vérifier avec le backend (mode graceful)
           try {
             await apiService.verifyFirebaseToken(token);
+            console.log('✅ Token vérifié avec le backend');
           } catch (verifyError) {
-            console.warn('⚠️ Vérification token backend échouée:', verifyError);
+            console.warn('⚠️ Vérification token backend échouée, mode dégradé activé:', verifyError.message);
+            
+            // En mode dégradé, on continue sans la vérification backend
+            // L'authentification Firebase reste valide
+            if (verifyError.status === 503) {
+              console.log('🔄 Backend temporairement indisponible, utilisation de l\'authentification locale');
+            }
           }
           
           console.log('✅ Utilisateur authentifié:', user.email);
@@ -406,7 +427,11 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {!loading && (
+        <UserProvider currentUser={currentUser}>
+          {children}
+        </UserProvider>
+      )}
     </AuthContext.Provider>
   );
 }

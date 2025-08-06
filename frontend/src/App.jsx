@@ -1,14 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { UserProvider } from './contexts/UserContext';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 import SystemHealth from './components/SystemHealth';
+import BackendStatusNotification from './components/BackendStatusNotification';
 import { initializeFrontendServices, checkFrontendHealth } from './services/index';
 import { getEnvironment, isLocalhost } from './config/apiConfig';
+import backendStatusService from './services/backendStatusService';
+import apiService from './services/apiService';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,9 @@ function App() {
         if (servicesResult.success) {
           console.log('✅ Services frontend prêts');
           setServicesReady(true);
+          
+          // Démarrer la surveillance du backend
+          backendStatusService.startMonitoring(apiService);
           
           // Vérifier la santé système initial
           const health = await checkFrontendHealth();
@@ -208,7 +213,6 @@ function App() {
 
       <Router>
         <AuthProvider>
-          <UserProvider>
             <div className="relative z-10">
               <AnimatePresence mode="wait">
                 {loading ? (
@@ -362,7 +366,6 @@ function App() {
                 )}
               </AnimatePresence>
             </div>
-          </UserProvider>
         </AuthProvider>
       </Router>
       
@@ -389,6 +392,9 @@ function App() {
           </div>
         </motion.div>
       )}
+
+      {/* Notification de statut du backend */}
+      <BackendStatusNotification />
 
       {/* Notification de santé système en cas de problème */}
       {systemHealth && systemHealth.overall !== 'healthy' && !showSystemHealth && (

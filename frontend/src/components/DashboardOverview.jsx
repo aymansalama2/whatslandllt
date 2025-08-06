@@ -11,11 +11,11 @@ import {
   FiXCircle,
   FiClock
 } from 'react-icons/fi';
-import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config/apiConfig';
 
 export default function DashboardOverview() {
-  const { userData } = useUser();
+  const { currentUser } = useAuth();
   const [stats, setStats] = useState({
     total_recipients: 0,
     successful_deliveries: 0,
@@ -29,13 +29,27 @@ export default function DashboardOverview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
-    fetchPhoneStats();
-  }, [userData]);
+    if (currentUser) {
+      fetchStats();
+      fetchPhoneStats();
+    }
+  }, [currentUser]);
 
   const fetchStats = async () => {
+    if (!currentUser) return;
+    
     try {
-      const response = await fetch(`${API_URL}/api/stats${userData ? `?uid=${userData.uid}` : ''}`);
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/stats?uid=${currentUser.uid}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des statistiques');
+      }
+      
       const data = await response.json();
       
       // Vérifier et nettoyer les données reçues
@@ -59,8 +73,20 @@ export default function DashboardOverview() {
   };
 
   const fetchPhoneStats = async () => {
+    if (!currentUser) return;
+    
     try {
-      const response = await fetch(`${API_URL}/api/phone-stats${userData ? `?uid=${userData.uid}` : ''}`);
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/phone-stats?uid=${currentUser.uid}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des statistiques téléphoniques');
+      }
+      
       const data = await response.json();
       
       // Vérifier que data est un tableau

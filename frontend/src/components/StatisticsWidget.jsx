@@ -20,49 +20,69 @@ export default function StatisticsWidget() {
   const [error, setError] = useState(null);
   const { currentUser } = useAuth();
   
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        const API_URL = import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}`}`;
-        const response = await fetch(`${API_URL}/api/stats${currentUser ? `?uid=${currentUser.uid}` : ''}`);
-        
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des statistiques');
-        }
-        
-        const data = await response.json();
-        if (data.success) {
-          // Vérifier et normaliser les données pour éviter les valeurs null
-          const globalStats = data.globalStats || {};
-          const recentStats = data.recentStats || {};
-          
-          setStats({
-            globalStats: {
-              total_recipients: globalStats.total_recipients || 0,
-              successful_deliveries: globalStats.successful_deliveries || 0,
-              failed_deliveries: globalStats.failed_deliveries || 0,
-              total_campaigns: globalStats.total_campaigns || 0
-            },
-            recentStats: {
-              recent_recipients: recentStats.recent_recipients || 0,
-              recent_successful: recentStats.recent_successful || 0,
-              recent_campaigns: recentStats.recent_campaigns || 0
-            },
-            recentCampaigns: data.recentCampaigns || []
-          });
-        }
-      } catch (err) {
-        console.error('Erreur lors du chargement des statistiques:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchStats = async () => {
+    if (!currentUser) return;
     
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const token = await currentUser.getIdToken();
+      
+      // Charger les statistiques globales
+      const statsResponse = await fetch(`${API_URL}/api/stats?uid=${currentUser.uid}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!statsResponse.ok) {
+        throw new Error('Erreur lors de la récupération des statistiques');
+      }
+      
+      const statsData = await statsResponse.json();
+      
+      // Charger les campagnes récentes
+      const campaignsResponse = await fetch(`${API_URL}/api/campaigns?uid=${currentUser.uid}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!campaignsResponse.ok) {
+        throw new Error('Erreur lors de la récupération des campagnes');
+      }
+      
+      const campaignsData = await campaignsResponse.json();
+      
+      // Mettre à jour les statistiques
+      setStats({
+        globalStats: {
+          total_recipients: statsData.total_recipients || 0,
+          successful_deliveries: statsData.successful_deliveries || 0,
+          failed_deliveries: statsData.failed_deliveries || 0,
+          total_campaigns: statsData.total_campaigns || 0
+        },
+        recentStats: {
+          recent_recipients: statsData.recent_recipients || 0,
+          recent_successful: statsData.recent_successful || 0,
+          recent_campaigns: statsData.recent_campaigns || 0
+        },
+        recentCampaigns: campaignsData.campaigns?.slice(0, 5) || []
+      });
+      
+      setError(null);
+    } catch (err) {
+      console.error('Erreur lors du chargement des données:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
     fetchStats();
     
-    // Actualiser les statistiques toutes les 30 secondes
+    // Actualiser les données toutes les 30 secondes
     const interval = setInterval(fetchStats, 30000);
     
     return () => clearInterval(interval);
@@ -359,4 +379,4 @@ export default function StatisticsWidget() {
       </div>
     </div>
   );
-} 
+}

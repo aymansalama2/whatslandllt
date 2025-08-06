@@ -33,6 +33,44 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+const sessionManager = require('./services/whatsappSessionManager');
+
+// Helper function pour Firebase Realtime Database
+async function updateFirebaseRealtimeDB(path, data) {
+  try {
+    const realtimeDb = await firebaseAdmin.realtimeDb;
+    if (realtimeDb && typeof realtimeDb.ref === 'function') {
+      await realtimeDb.ref(path).update(data);
+    } else {
+      // Silencieux si non disponible
+      return;
+    }
+  } catch (error) {
+    // Silencieux pour les erreurs de permissions - c'est normal si les règles ne permettent pas l'écriture
+    if (error.message && (error.message.includes('PERMISSION_DENIED') || error.message.includes('permission_denied'))) {
+      return; // Ignorer silencieusement les erreurs de permissions
+    }
+    console.warn('⚠️ Sauvegarde Realtime Database échouée:', error.message);
+  }
+}
+
+async function setFirebaseRealtimeDB(path, data) {
+  try {
+    const realtimeDb = await firebaseAdmin.realtimeDb;
+    if (realtimeDb && typeof realtimeDb.ref === 'function') {
+      await realtimeDb.ref(path).set(data);
+    } else {
+      // Silencieux si non disponible
+      return;
+    }
+  } catch (error) {
+    // Silencieux pour les erreurs de permissions - c'est normal si les règles ne permettent pas l'écriture
+    if (error.message && (error.message.includes('PERMISSION_DENIED') || error.message.includes('permission_denied'))) {
+      return; // Ignorer silencieusement les erreurs de permissions
+    }
+    console.warn('⚠️ Sauvegarde Realtime Database échouée:', error.message);
+  }
+}
 
 // Configuration du serveur
 // Initialisation du serveur Express
@@ -41,7 +79,7 @@ const PORT = process.env.PORT || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Configuration de base
-app.set('trust proxy', true);
+app.set('trust proxy', false); // Désactivé pour éviter les problèmes de rate limiting
 app.disable('x-powered-by');
 
 // Configuration CORS pour Express
@@ -95,6 +133,7 @@ const ExcelJS = require('exceljs');
 
 // Configuration Firebase Admin
 const firebaseAdmin = require('./firebase-admin-config');
+const admin = require('firebase-admin');
 const { db, auth: firebaseAuth, realtimeDb } = firebaseAdmin;
 
 // Nettoyage des anciens répertoires Chrome temporaires
@@ -458,6 +497,17 @@ async function verifyFirebaseToken(req, res, next) {
     next();
   } catch (error) {
     logger.error('Erreur vérification token Firebase:', error);
+    
+    // Gestion spécifique des erreurs Firebase
+    if (error.message.includes('Firebase Auth non initialisé')) {
+      return res.status(503).json({ 
+        success: false,
+        error: 'Service d\'authentification temporairement indisponible',
+        code: 'AUTH_SERVICE_UNAVAILABLE',
+        retry: true
+      });
+    }
+    
     res.status(401).json({ 
       success: false,
       error: 'Token invalide ou expiré' 
@@ -543,8 +593,8 @@ async function createFirebaseUserClient(firebaseUid, userEmail) {
             sessionId: `whatsland-firebase-${firebaseUid}`
         });
 
-        // Sauvegarder dans Firebase Realtime Database
-        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).set({
+        // Sauvegarder dans Firebase Realtime Database (si disponible)
+        await setFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
             sessionId: `whatsland-firebase-${firebaseUid}`,
             status: 'initializing',
             userEmail: userEmail,
@@ -574,7 +624,7 @@ function setupFirebaseClientEvents(firebaseUid, client) {
                 userSession.lastActivity = Date.now();
                 
                 // Mettre à jour Firebase
-                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
                     status: 'waiting_qr',
                     lastActivity: admin.database.ServerValue.TIMESTAMP
                 });
@@ -601,7 +651,7 @@ function setupFirebaseClientEvents(firebaseUid, client) {
                 const phoneNumber = info ? info.wid.user : null;
                 
                 // Mettre à jour Firebase
-                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
                     status: 'ready',
                     phoneNumber: phoneNumber,
                     lastActivity: admin.database.ServerValue.TIMESTAMP
@@ -617,7 +667,7 @@ function setupFirebaseClientEvents(firebaseUid, client) {
 
     client.on('authenticated', async () => {
         try {
-            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+            await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
                 status: 'authenticated',
                 lastActivity: admin.database.ServerValue.TIMESTAMP
             });
@@ -631,7 +681,7 @@ function setupFirebaseClientEvents(firebaseUid, client) {
 
     client.on('auth_failure', async (msg) => {
         try {
-            await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+            await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
                 status: 'auth_failure',
                 lastActivity: admin.database.ServerValue.TIMESTAMP,
                 authFailureReason: msg
@@ -693,7 +743,7 @@ async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
             
             // Mettre à jour Firebase
             try {
-                await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
                     status: 'disconnected',
                     isActive: false,
                     disconnectedAt: admin.database.ServerValue.TIMESTAMP,
@@ -706,7 +756,7 @@ async function cleanupFirebaseUserSession(firebaseUid, reason = 'unknown') {
                 // Réessayer une fois
                 try {
                     await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
-                    await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+                    await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
                         status: 'disconnected',
                         isActive: false,
                         disconnectedAt: admin.database.ServerValue.TIMESTAMP,
@@ -775,7 +825,7 @@ app.get('/api/qrcode', async (req, res) => {
     whatsappAuthenticated
   });
 
-  if (whatsappReady) {
+  if (whatsappReady || whatsappAuthenticated) {
     console.log('ℹ️ WhatsApp déjà connecté, pas besoin de QR code');
     return res.json({ 
       status: 'already_connected',
@@ -827,6 +877,14 @@ async function getNumberId(number) {
             return cached.result;
         }
         
+        // Ajouter une petite attente pour s'assurer que le client est prêt
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Vérifier si le client est toujours actif
+        if (!client || !client.pupPage || client.pupPage.isClosed()) {
+            throw new Error('Client WhatsApp non disponible ou fermé');
+        }
+        
         const result = await client.getNumberId(cleanNumber);
         
         // Mettre en cache le résultat
@@ -855,9 +913,14 @@ async function sendMessageWithRetry(chatId, messageData, retryCount = 0) {
 
         // Première tentative
         try {
-      // Attendre un court instant optimisé avant d'envoyer le message
-      await new Promise(resolve => setTimeout(resolve, 100));
+            // Attendre un court instant optimisé avant d'envoyer le message
+            await new Promise(resolve => setTimeout(resolve, 100));
             console.log(`Tentative d'envoi à ${chatId}`);
+            
+            // Vérifier si le client est toujours actif
+            if (!client || !client.pupPage || client.pupPage.isClosed()) {
+                throw new Error('Client WhatsApp non disponible ou fermé');
+            }
             
             // Vérifier si le chat existe
             const chat = await client.getChatById(chatId);
@@ -950,8 +1013,19 @@ async function sendMessageWithRetry(chatId, messageData, retryCount = 0) {
             await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
 
             // Deuxième tentative avec vérification de l'ID
-            const numberDetails = await getNumberId(chatId.replace('@c.us', ''));
-            if (!numberDetails) {
+            let numberDetails;
+            try {
+                // Vérifier à nouveau si le client est toujours actif
+                if (!client || !client.pupPage || client.pupPage.isClosed()) {
+                    throw new Error('Client WhatsApp non disponible ou fermé');
+                }
+                
+                numberDetails = await getNumberId(chatId.replace('@c.us', ''));
+                if (!numberDetails) {
+                    throw new Error('Numéro non trouvé sur WhatsApp');
+                }
+            } catch (verificationError) {
+                console.error(`Erreur lors de la vérification du numéro: ${verificationError.message}`);
                 throw new Error('Numéro non trouvé sur WhatsApp');
             }
 
@@ -1035,7 +1109,7 @@ async function updateMessageStats(phoneNumber, isSuccessful, userId, niche = 'de
 }
 
 // Route pour récupérer les statistiques globales
-app.get('/api/stats', async (req, res) => {
+app.get('/api/stats', verifyFirebaseToken, async (req, res) => {
   const userId = req.query.uid;
   
   try {
@@ -1375,6 +1449,22 @@ app.post('/api/send', upload.single('media'), async (req, res) => {
     const campaignName = message ? 
       (message.length > 30 ? message.substring(0, 30) + "..." : message) : 
       `Campagne du ${new Date().toLocaleDateString('fr-FR')}`;
+    
+    // Assurer que l'utilisateur existe dans la base de données locale si uid est fourni
+    if (uid) {
+      try {
+        await User.findOrCreate({
+          where: { uid },
+          defaults: {
+            uid,
+            email: `user-${uid}@temp.com`, // Email temporaire
+            niche: userNiche || 'default'
+          }
+        });
+      } catch (userError) {
+        console.warn('Erreur lors de la création/recherche utilisateur:', userError.message);
+      }
+    }
     
     try {  
       var campaign = await Campaign.create({
@@ -1949,12 +2039,15 @@ async function fullWhatsAppReset() {
       client.on('ready', () => {
         console.log('✅ WhatsApp est prêt');
         whatsappReady = true;
+        whatsappAuthenticated = true;
+        lastQrCode = null; // Effacer le QR code quand WhatsApp est prêt
         io.emit('ready');
       });
       
       client.on('authenticated', () => {
         console.log('🔐 Authentifié');
         whatsappAuthenticated = true;
+        lastQrCode = null; // Effacer le QR code après authentification
         io.emit('authenticated');
       });
       
@@ -1972,6 +2065,7 @@ async function fullWhatsAppReset() {
         console.log('🔌 Déconnecté de WhatsApp:', reason);
         whatsappReady = false;
         whatsappAuthenticated = false;
+        lastQrCode = null; // Effacer le QR code à la déconnexion
         io.emit('disconnected', { reason });
         
         try {
@@ -1980,10 +2074,12 @@ async function fullWhatsAppReset() {
           await killChromiumProcesses();
           await cleanSessionDirectory();
           
-          // Attendre un peu plus longtemps avant de réinitialiser
-          setTimeout(() => {
-            fullWhatsAppReset();
-          }, 5000);
+          // Ne réinitialiser que si la déconnexion n'est pas volontaire
+          if (reason !== 'user' && reason !== 'intentional') {
+            setTimeout(() => {
+              fullWhatsAppReset();
+            }, 5000);
+          }
         } catch (error) {
           console.error('❌ Erreur lors du nettoyage après déconnexion:', error);
         }
@@ -2457,7 +2553,7 @@ app.post('/api/firebase/send-message',
         
         // Mettre à jour l'activité et les statistiques
         userSession.lastActivity = Date.now();
-        await realtimeDb.ref(`whatsapp_sessions/${firebaseUid}`).update({
+        await updateFirebaseRealtimeDB(`whatsapp_sessions/${firebaseUid}`, {
             lastActivity: admin.database.ServerValue.TIMESTAMP,
             messagesSent: admin.database.ServerValue.increment(1)
         });
@@ -2819,6 +2915,24 @@ app.get('/api/metrics', (req, res) => {
 });
 
 // Route de vérification token Firebase
+// Route de vérification du statut Firebase (sans auth)
+app.get('/api/firebase/health', async (req, res) => {
+  try {
+    const status = firebaseAdmin.getStatus();
+    res.json({
+      success: true,
+      firebase: status,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Erreur vérification Firebase',
+      details: error.message
+    });
+  }
+});
+
 app.post('/api/firebase/verify', async (req, res) => {
   try {
     const { token } = req.body;

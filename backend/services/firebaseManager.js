@@ -94,7 +94,9 @@ class FirebaseManager {
     getFirebaseConfig() {
         return {
             projectId: process.env.FIREBASE_PROJECT_ID || "watsland-96923",
-            databaseURL: process.env.FIREBASE_DATABASE_URL || "https://watsland-96923-default-rtdb.firebaseio.com"
+            databaseURL: process.env.FIREBASE_DATABASE_URL || "https://watsland-96923-default-rtdb.firebaseio.com",
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "watsland-96923.appspot.com",
+            databaseAuthVariableOverride: null
         };
     }
 
@@ -109,9 +111,11 @@ class FirebaseManager {
 
         // Éviter les initialisations multiples simultanées
         if (admin.apps.length > 0) {
-            console.log('ℹ️ Application Firebase déjà présente');
+            console.log('ℹ️ Application Firebase déjà présente, réutilisation');
             this.app = admin.apps[0];
-            return this.setupServices();
+            await this.setupServices();
+            this.initialized = true;
+            return this.getServices();
         }
 
         while (this.retryCount < this.maxRetries) {
@@ -151,7 +155,8 @@ class FirebaseManager {
         const config = this.getFirebaseConfig();
         let initConfig = {
             projectId: config.projectId,
-            databaseURL: config.databaseURL
+            databaseURL: config.databaseURL,
+            databaseAuthVariableOverride: null
         };
 
         // Tentative 1: Service Account File
@@ -188,7 +193,15 @@ class FirebaseManager {
         try {
             this.db = admin.firestore();
             this.auth = admin.auth();
-            this.realtimeDb = admin.database();
+            
+            // Initialiser Realtime Database sans URL spécifique (utilise celle de l'app)
+            try {
+                this.realtimeDb = admin.database();
+                console.log('✅ Realtime Database initialisé');
+            } catch (dbError) {
+                console.warn('⚠️ Realtime Database non disponible:', dbError.message);
+                this.realtimeDb = null;
+            }
             
             // Configuration Firestore
             this.db.settings({
@@ -196,8 +209,26 @@ class FirebaseManager {
                 timestampsInSnapshots: true
             });
             
+            // Test de connexion Realtime Database seulement s'il est disponible
+            if (this.realtimeDb) {
+                try {
+                    const ref = this.realtimeDb.ref('test');
+                    await ref.set({ timestamp: admin.database.ServerValue.TIMESTAMP });
+                    await ref.remove();
+                    console.log('✅ Test Realtime Database réussi');
+                } catch (testError) {
+                    // Silencieux pour les erreurs de permissions - c'est normal si les règles ne permettent pas l'écriture
+                    if (testError.message && (testError.message.includes('PERMISSION_DENIED') || testError.message.includes('permission_denied'))) {
+                        console.log('ℹ️ Realtime Database disponible mais accès en lecture seule');
+                    } else {
+                        console.warn('⚠️ Test Realtime Database échoué:', testError.message);
+                    }
+                }
+            }
+            
             console.log('✅ Services Firebase configurés');
         } catch (error) {
+            console.error('❌ Erreur configuration services:', error);
             throw new Error(`Erreur configuration services: ${error.message}`);
         }
     }
@@ -270,6 +301,7 @@ class FirebaseManager {
      */
     async verifyToken(token) {
         if (!this.initialized || !this.auth) {
+            console.warn('⚠️ Firebase Auth non disponible pour vérification token');
             throw new Error('Firebase Auth non initialisé');
         }
         

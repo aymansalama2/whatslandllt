@@ -83,19 +83,24 @@ export const API_TIMEOUTS = {
   default: 30000,      // 30 secondes par défaut
   upload: 60000,       // 1 minute pour uploads
   whatsapp: 45000,     // 45 secondes pour WhatsApp
-  firebase: 15000,     // 15 secondes pour Firebase
-  health: 5000         // 5 secondes pour health checks
+  firebase: 30000,     // 30 secondes pour Firebase
+  health: 10000        // 10 secondes pour health checks
 };
 
 // Configuration retry policy
 export const RETRY_CONFIG = {
-  maxRetries: 3,
-  retryDelay: 1000,
-  retryDelayMultiplier: 2,
-  maxRetryDelay: 10000,
+  maxRetries: 5,
+  retryDelay: 2000,
+  retryDelayMultiplier: 1.5,
+  maxRetryDelay: 15000,
   retryCondition: (error) => {
-    // Retry sur erreurs réseau et 5xx
-    return !error.response || error.response.status >= 500;
+    // Retry sur erreurs réseau, 5xx et certaines erreurs spécifiques
+    if (!error.response) return true; // Erreur réseau
+    if (error.response.status >= 500) return true; // Erreur serveur
+    if (error.response.status === 429) return true; // Rate limit
+    if (error.code === 'ECONNABORTED') return true; // Timeout
+    if (error.code === 'ETIMEDOUT') return true; // Timeout réseau
+    return false;
   }
 };
 

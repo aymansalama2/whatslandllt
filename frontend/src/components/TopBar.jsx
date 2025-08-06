@@ -1,108 +1,194 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useUser } from '../contexts/UserContext';
-import { FiUser, FiLogOut, FiBell } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiLogOut, FiUser, FiBell, FiMenu, FiX, FiSettings } from 'react-icons/fi';
 
-export default function TopBar({ activeTab, sidebarCollapsed }) {
+export default function TopBar() {
   const { currentUser, logout } = useAuth();
-  const { userData } = useUser();
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    // Fermer le menu mobile lors du changement de route
+    return () => setIsMobileMenuOpen(false);
+  }, []);
 
   const handleLogout = async () => {
     try {
       await logout();
-      window.location.href = '/login';
+      navigate('/login');
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
     }
   };
 
-  const getPageTitle = () => {
-    switch (activeTab) {
-      case 'status':
-        return 'État du Système';
-      case 'statistics':
-        return 'Statistiques';
-      case 'profile':
-        return 'Profil Utilisateur';
-      case 'messaging':
-        return 'Messagerie';
-      case 'admin':
-        return 'Administration';
-      default:
-        return 'Dashboard';
-    }
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+    // Fermer le menu mobile si ouvert
+    if (isMobileMenuOpen) setIsMobileMenuOpen(false);
   };
 
   return (
-    <motion.div
-      className="fixed top-0 right-0 z-40 h-16 bg-white/70 backdrop-blur-xl shadow-sm border-b border-white/20"
-      style={{
-        left: sidebarCollapsed ? '80px' : '280px'
-      }}
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Page Title */}
-        <h1 className="text-xl font-semibold text-gray-800">
-          {getPageTitle()}
-        </h1>
-
-        {/* Right Section */}
-        <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
-            <FiBell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-          </button>
-
-          {/* Profile Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-medium">
-                {userData?.prenom?.[0] || currentUser?.email?.[0]?.toUpperCase() || 'U'}
-              </div>
-              <span className="text-sm text-gray-700">
-                {userData?.prenom || currentUser?.email?.split('@')[0] || 'Utilisateur'}
+    <nav className="bg-white shadow-lg border-b border-gray-200 fixed w-full top-0 z-50">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex justify-between h-16">
+          {/* Logo et titre - Toujours visible */}
+          <div className="flex items-center flex-shrink-0">
+            <div className="flex items-center">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                WhatsLand
               </span>
-            </button>
+            </div>
+          </div>
 
-            {/* Dropdown Menu */}
-            {showProfileMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2"
+          {/* Menu mobile - Bouton hamburger */}
+          <div className="flex items-center sm:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
+              aria-expanded="false"
+            >
+              <span className="sr-only">Ouvrir le menu</span>
+              {isMobileMenuOpen ? (
+                <FiX className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <FiMenu className="h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+
+          {/* Menu desktop - Masqué sur mobile */}
+          <div className="hidden sm:flex sm:items-center sm:space-x-4">
+            {/* Notifications */}
+            <div className="relative">
+              <button 
+                className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                onClick={() => setNotifications(prev => !prev)}
               >
-                <button
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    // Naviguer vers le profil
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <FiUser className="w-4 h-4" />
-                  <span>Profil</span>
-                </button>
+                <FiBell className="h-5 w-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white" />
+                )}
+              </button>
+            </div>
+
+            {/* Menu utilisateur */}
+            <div className="relative">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">
+                      {currentUser?.email}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {currentUser?.displayName || 'Utilisateur'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={toggleDropdown}
+                    className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:opacity-90 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <FiUser className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Bouton déconnexion - visible sur desktop */}
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                  className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 >
-                  <FiLogOut className="w-4 h-4" />
-                  <span>Déconnexion</span>
+                  <FiLogOut className="h-5 w-5" />
+                  <span className="text-sm font-medium">Se déconnecter</span>
                 </button>
-              </motion.div>
-            )}
+              </div>
+
+              {/* Dropdown menu */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100">
+                  <div className="py-1">
+                    <a
+                      href="#profile"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <FiUser className="mr-3 h-5 w-5 text-gray-400" />
+                      Profil
+                    </a>
+                    <a
+                      href="#settings"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <FiSettings className="mr-3 h-5 w-5 text-gray-400" />
+                      Paramètres
+                    </a>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <FiLogOut className="mr-3 h-5 w-5 text-gray-400" />
+                      Se déconnecter
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Menu mobile - Panneau déroulant */}
+        <div
+          className={`${
+            isMobileMenuOpen ? 'block' : 'hidden'
+          } sm:hidden border-t border-gray-200 py-2`}
+        >
+          <div className="pt-2 pb-3 space-y-1">
+            {/* Profil utilisateur mobile */}
+            <div className="flex items-center px-4 py-3 bg-gray-50 rounded-lg">
+              <div className="flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                  <FiUser className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <div className="text-sm font-medium text-gray-700 truncate max-w-[200px]">
+                  {currentUser?.email}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {currentUser?.displayName || 'Utilisateur'}
+                </div>
+              </div>
+            </div>
+
+            {/* Options du menu mobile */}
+            <a
+              href="#profile"
+              className="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <FiUser className="h-5 w-5 mr-3" />
+              <span className="text-sm font-medium">Profil</span>
+            </a>
+
+            <a
+              href="#settings"
+              className="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <FiSettings className="h-5 w-5 mr-3" />
+              <span className="text-sm font-medium">Paramètres</span>
+            </a>
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <FiLogOut className="h-5 w-5 mr-3" />
+              <span className="text-sm font-medium">Se déconnecter</span>
+            </button>
           </div>
         </div>
       </div>
-    </motion.div>
+    </nav>
   );
 }

@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { ref, set, get, onValue, remove, update } from 'firebase/database';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from './AuthContext';
 import { database, ADMIN_EMAILS, SUPER_ADMIN_EMAIL, auth } from '../firebase/config';
 
 const UserContext = createContext();
@@ -10,8 +9,7 @@ export function useUser() {
   return useContext(UserContext);
 }
 
-export function UserProvider({ children }) {
-  const { currentUser } = useAuth();
+export function UserProvider({ children, currentUser }) {
   const [userData, setUserData] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
