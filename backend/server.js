@@ -270,8 +270,8 @@ const apiLimiter = rateLimit({
   // Configuration pour proxy (Nginx)
   trustProxy: true,
   keyGenerator: (req) => {
-    // Utiliser l'IP du client depuis X-Real-IP ou X-Forwarded-For ou l'IP directe
-    return req.ip || req.connection.remoteAddress || 'anonymous';
+    const { ipKeyGenerator } = require('express-rate-limit');
+    return ipKeyGenerator(req);
   }
 });
 
