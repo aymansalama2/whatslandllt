@@ -15,8 +15,27 @@ export default defineConfig(({ command, mode }) => {
     define: {
       // Use the environment variable from .env files or process.env
       'import.meta.env.VITE_API_URL': JSON.stringify(
-        env.VITE_API_URL || process.env.VITE_API_URL || (mode === 'development' ? 'http://localhost:5001' : undefined)
+        env.VITE_API_URL || process.env.VITE_API_URL || (mode === 'development' ? '' : undefined)
       )
+    },
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:5001',
+          changeOrigin: true,
+          secure: false
+        },
+        '/test': {
+          target: 'http://localhost:5001',
+          changeOrigin: true,
+          secure: false
+        },
+        '/socket.io': {
+          target: 'http://localhost:5001',
+          changeOrigin: true,
+          ws: true
+        }
+      }
     },
   }
 })

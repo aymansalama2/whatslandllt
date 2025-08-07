@@ -11,11 +11,11 @@ const getApiUrl = () => {
     return import.meta.env.VITE_API_URL;
   }
   
-  // Force localhost en mode développement (plusieurs vérifications)
+  // Force proxy en mode développement (Vite proxy)
   const isDev = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development' || !import.meta.env.PROD;
   if (isDev) {
-    console.log('🔧 Mode développement détecté, utilisation de localhost:5001');
-    return 'http://localhost:5001';
+    console.log('🔧 Mode développement détecté, utilisation du proxy Vite');
+    return ''; // Utilise le proxy Vite
   }
   
   // Auto-detection based on location
@@ -24,8 +24,8 @@ const getApiUrl = () => {
     console.log('🔧 Hostname détecté:', hostname);
     
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.')) {
-      console.log('🔧 Hostname local détecté, utilisation de localhost:5001');
-      return 'http://localhost:5001';
+      console.log('🔧 Hostname local détecté, utilisation du proxy');
+      return ''; // Utilise le proxy Vite ou direct
     }
     
     if (hostname.includes('whatsland.click')) {
@@ -36,9 +36,9 @@ const getApiUrl = () => {
     }
   }
   
-  // Fallback sécurisé - toujours localhost en développement
-  console.log('🔧 Fallback vers localhost:5001');
-  return 'http://localhost:5001';
+  // Fallback sécurisé - utilise le proxy
+  console.log('🔧 Fallback vers proxy');
+  return '';
 };
 
 export const API_URL = getApiUrl();

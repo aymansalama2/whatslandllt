@@ -94,7 +94,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.set('trust proxy', true); // Activé pour gérer les requêtes depuis Nginx
 app.disable('x-powered-by');
 
-// Configuration CORS supprimée - gérée par nginx
+// Configuration CORS supprimée - gérée par proxy/nginx
 
 // Créer le serveur HTTP
 const server = http.createServer(app);
