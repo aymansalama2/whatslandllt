@@ -24,6 +24,7 @@ export default function Login() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [loginStep, setLoginStep] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -56,12 +57,20 @@ export default function Login() {
       setError('');
       setMessage('');
       setLoading(true);
+      setLoginStep('Authentification Firebase...');
+      
       await login(email, password);
-      navigate('/dashboard');
+      
+      setLoginStep('Redirection vers le dashboard...');
+      // Petit délai pour montrer le message de succès
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (err) {
       setError('Échec de la connexion - ' + err.message);
     } finally {
       setLoading(false);
+      setLoginStep('');
     }
   }
 
@@ -541,7 +550,7 @@ export default function Login() {
                         >
                           <FiRefreshCw size={20} />
                         </motion.div>
-                        <span>Connexion en cours...</span>
+                        <span>{loginStep || 'Connexion en cours...'}</span>
                       </>
                     ) : (
                       <>

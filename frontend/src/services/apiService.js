@@ -335,7 +335,7 @@ class ApiService {
    * Méthodes spécialisées pour WhatsLand
    */
 
-  // Auth
+  // Auth (optimisé pour login rapide)
   async verifyFirebaseToken(token) {
     try {
       // Vérifier que le token est valide
@@ -343,23 +343,17 @@ class ApiService {
         throw new Error('Token invalide');
       }
 
-      // D'abord vérifier la santé Firebase
-      try {
-        await this.get('/api/firebase/health', { timeout: 5000 });
-      } catch (healthError) {
-        console.warn('⚠️ Firebase health check échoué:', healthError.message);
-        // Continuer quand même avec la vérification du token
-      }
-
-      // Configurer la requête avec un timeout plus long
+      // Configurer la requête avec timeout court et pas de health check préalable
       const config = {
-        timeout: API_TIMEOUTS.firebase,
+        timeout: API_TIMEOUTS.firebase, // 8 secondes maintenant
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        // Désactiver les retry pour cette requête critique
+        retry: false
       };
 
-      // Faire la requête avec retry automatique
+      // Faire la requête directement sans health check préalable
       return await this.post(API_ENDPOINTS.firebase.verify, { token }, config);
     } catch (error) {
       console.error('❌ Erreur vérification token Firebase:', error);
@@ -421,7 +415,8 @@ class ApiService {
   async testConnection() {
     try {
       const startTime = Date.now();
-      const response = await this.get('/api/health', { timeout: 5000 });
+      // Test de connexion via un endpoint qui fonctionne
+    const response = await this.get('/api/firebase/health', { timeout: 5000 });
       const latency = Date.now() - startTime;
       
       return {

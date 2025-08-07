@@ -18,6 +18,16 @@ export default defineConfig(({ command, mode }) => {
         env.VITE_API_URL || process.env.VITE_API_URL || (mode === 'development' ? '' : undefined)
       )
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Force new filenames to bypass cache
+          entryFileNames: `assets/[name]-[hash]-v2.js`,
+          chunkFileNames: `assets/[name]-[hash]-v2.js`,
+          assetFileNames: `assets/[name]-[hash]-v2.[ext]`
+        }
+      }
+    },
     server: {
       proxy: {
         '/api': {

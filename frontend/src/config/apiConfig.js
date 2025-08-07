@@ -5,13 +5,16 @@
 
 // Configuration des URLs selon l'environnement
 const getApiUrl = () => {
-  // Ignorer la variable d'environnement si elle contient l'IP problématique
-  if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('92.113.31.157')) {
-    console.log('🔧 URL API depuis variable d\'environnement:', import.meta.env.VITE_API_URL);
-    return import.meta.env.VITE_API_URL;
-  } else if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.includes('92.113.31.157')) {
-    console.log('🚫 Variable d\'environnement ignorée (contient IP problématique):', import.meta.env.VITE_API_URL);
-  }
+  // FORCER l'utilisation du domaine - ignorer complètement les variables d'environnement
+  console.log('🚫 Variables d\'environnement ignorées - utilisation forcée du domaine');
+  
+  // Toujours ignorer la variable d'environnement problématique
+  // if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('92.113.31.157')) {
+  //   console.log('🔧 URL API depuis variable d\'environnement:', import.meta.env.VITE_API_URL);
+  //   return import.meta.env.VITE_API_URL;
+  // } else if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.includes('92.113.31.157')) {
+  //   console.log('🚫 Variable d\'environnement ignorée (contient IP problématique):', import.meta.env.VITE_API_URL);
+  // }
   
   // Force proxy en mode développement (Vite proxy)
   const isDev = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development' || !import.meta.env.PROD;
@@ -30,10 +33,10 @@ const getApiUrl = () => {
       return ''; // Utilise le proxy Vite ou direct
     }
     
-    if (hostname.includes('whatsland.click')) {
-      // Use the same domain without port - nginx will proxy to backend
-      const url = `${window.location.protocol}//${hostname}`;
-      console.log('🔧 Domaine production détecté (proxy via nginx):', url);
+    if (hostname.includes('whatsland.click') || hostname.includes('92.113.31.157')) {
+      // FORCER l'utilisation du domaine même si on accède par IP
+      const url = `https://whatsland.click`;
+      console.log('🔧 Domaine forcé (HTTPS):', url);
       return url;
     }
     
@@ -87,21 +90,21 @@ export const SOCKET_CONFIG = {
   }
 };
 
-// Configuration des timeouts API
+// Configuration des timeouts API (optimisés pour une meilleure UX)
 export const API_TIMEOUTS = {
-  default: 30000,      // 30 secondes par défaut
+  default: 15000,      // 15 secondes par défaut (réduit)
   upload: 60000,       // 1 minute pour uploads
   whatsapp: 45000,     // 45 secondes pour WhatsApp
-  firebase: 30000,     // 30 secondes pour Firebase
-  health: 10000        // 10 secondes pour health checks
+  firebase: 8000,      // 8 secondes pour Firebase (fortement réduit pour login rapide)
+  health: 5000         // 5 secondes pour health checks (réduit)
 };
 
-// Configuration retry policy
+// Configuration retry policy (optimisée pour login rapide)
 export const RETRY_CONFIG = {
-  maxRetries: 5,
-  retryDelay: 2000,
-  retryDelayMultiplier: 1.5,
-  maxRetryDelay: 15000,
+  maxRetries: 2,        // Réduit à 2 tentatives pour éviter les longs délais
+  retryDelay: 1000,     // Délai réduit à 1 seconde
+  retryDelayMultiplier: 1.2, // Multiplication plus faible
+  maxRetryDelay: 3000,  // Délai maximum réduit
   retryCondition: (error) => {
     // Retry sur erreurs réseau, 5xx et certaines erreurs spécifiques
     if (!error.response) return true; // Erreur réseau
