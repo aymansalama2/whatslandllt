@@ -94,7 +94,15 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.set('trust proxy', true); // Activé pour gérer les requêtes depuis Nginx
 app.disable('x-powered-by');
 
-// Configuration CORS supprimée - gérée par proxy/nginx
+// Configuration CORS
+const cors = require('cors');
+app.use(cors({
+    origin: ['http://whatsland.click', 'http://www.whatsland.click', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400
+}));
 
 // Créer le serveur HTTP
 const server = http.createServer(app);
