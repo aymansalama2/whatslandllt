@@ -33,7 +33,7 @@ class ApiService {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      withCredentials: false // Géré manuellement avec Firebase
+      withCredentials: false
     });
   }
 

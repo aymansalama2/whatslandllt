@@ -1,60 +1,1537 @@
-2025-08-04 10:40:37: Firebase Admin SDK initialisé avec succès pour le développement
-2025-08-04 10:40:38: Contraintes de clé étrangère désactivées manuellement
-2025-08-04 10:40:38: 🚀 Initialisation de WhatsApp Web...
-2025-08-04 10:40:38: 🗑️ Nettoyage du répertoire d'authentification...
-2025-08-04 10:40:38: 🔄 Création du client WhatsApp...
-2025-08-04 10:40:38: 🚀 Début de l'initialisation du client WhatsApp: 2025-08-04T09:40:38.453Z
-2025-08-04 10:40:38: 🔍 Vérification de l'état du serveur...
-2025-08-04 10:40:38: {
-2025-08-04 10:40:38:   whatsappReady: false,
-2025-08-04 10:40:38:   whatsappAuthenticated: false,
-2025-08-04 10:40:38:   hasQrCode: false,
-2025-08-04 10:40:38:   clientInitialized: true,
-2025-08-04 10:40:38:   socketConnected: true
-2025-08-04 10:40:38: }
-2025-08-04 10:40:38: ⚠️ Pas de QR code après 10 secondes, réinitialisation...
-2025-08-04 10:40:38: Erreur lors de la destruction du client: TypeError: Cannot read properties of null (reading 'close')
-2025-08-04 10:40:38:     at Client.destroy (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\src\Client.js:782:31)
-2025-08-04 10:40:38:     at fullWhatsAppReset (C:\test1\whatslandllt\backend\server.js:1644:22)
-2025-08-04 10:40:38:     at checkServerHealth (C:\test1\whatslandllt\backend\server.js:2340:13)
-2025-08-04 10:40:38:     at Server.<anonymous> (C:\test1\whatslandllt\backend\server.js:2350:5)
-2025-08-04 10:40:38:     at Object.onceWrapper (node:events:632:28)
-2025-08-04 10:40:38:     at Server.emit (node:events:530:35)
-2025-08-04 10:40:38:     at Server.<anonymous> (C:\Users\salam\AppData\Roaming\npm\node_modules\pm2\node_modules\@pm2\io\build\main\metrics\httpMetrics.js:153:37)
-2025-08-04 10:40:38:     at emitListeningNT (node:net:1983:10)
-2025-08-04 10:40:38:     at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
-2025-08-04 10:40:38: Doublons d'email nettoyés
-2025-08-04 10:40:38: ✅ Connexion à la base de données établie avec succès
-2025-08-04 10:40:39: Base de données synchronisée avec succès (tables conservées)
-2025-08-04 10:40:47: Initialisation d'un nouveau client WhatsApp
-2025-08-04 10:40:48: 🔍 Vérification de l'état du serveur...
-2025-08-04 10:40:48: {
-2025-08-04 10:40:48:   whatsappReady: false,
-2025-08-04 10:40:48:   whatsappAuthenticated: false,
-2025-08-04 10:40:48:   hasQrCode: false,
-2025-08-04 10:40:48:   clientInitialized: true,
-2025-08-04 10:40:48:   socketConnected: true
-2025-08-04 10:40:48: }
-2025-08-04 10:40:48: ⚠️ Pas de QR code après 10 secondes, réinitialisation...
-2025-08-04 10:40:48: Erreur lors de la destruction du client: TypeError: Cannot read properties of null (reading 'close')
-2025-08-04 10:40:48:     at Client.destroy (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\src\Client.js:782:31)
-2025-08-04 10:40:48:     at fullWhatsAppReset (C:\test1\whatslandllt\backend\server.js:1644:22)
-2025-08-04 10:40:48:     at Timeout.checkServerHealth [as _onTimeout] (C:\test1\whatslandllt\backend\server.js:2340:13)
-2025-08-04 10:40:48:     at listOnTimeout (node:internal/timers:588:17)
-2025-08-04 10:40:48:     at process.processTimers (node:internal/timers:523:7)
-2025-08-04 10:40:58: Initialisation d'un nouveau client WhatsApp
-2025-08-04 10:40:58: 🔍 Vérification de l'état du serveur...
-2025-08-04 10:40:58: {
-2025-08-04 10:40:58:   whatsappReady: false,
-2025-08-04 10:40:58:   whatsappAuthenticated: false,
-2025-08-04 10:40:58:   hasQrCode: false,
-2025-08-04 10:40:58:   clientInitialized: true,
-2025-08-04 10:40:58:   socketConnected: true
-2025-08-04 10:40:58: }
-2025-08-04 10:40:58: ⚠️ Pas de QR code après 10 secondes, réinitialisation...
-2025-08-04 10:40:58: Erreur lors de la destruction du client: TypeError: Cannot read properties of null (reading 'close')
-2025-08-04 10:40:58:     at Client.destroy (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\src\Client.js:782:31)
-2025-08-04 10:40:58:     at fullWhatsAppReset (C:\test1\whatslandllt\backend\server.js:1644:22)
-2025-08-04 10:40:58:     at Timeout.checkServerHealth [as _onTimeout] (C:\test1\whatslandllt\backend\server.js:2340:13)
-2025-08-04 10:40:58:     at listOnTimeout (node:internal/timers:588:17)
-2025-08-04 10:40:58:     at process.processTimers (node:internal/timers:523:7)
+2025-08-06 16:21:15: 🔄 Tentative d'initialisation Firebase 1/3...
+2025-08-06 16:21:15: Contraintes de clé étrangère désactivées manuellement
+2025-08-06 16:21:15: 🚀 Initialisation de WhatsApp Web...
+2025-08-06 16:21:15: 🗑️ Nettoyage du répertoire d'authentification...
+2025-08-06 16:21:15: 🔄 Création du client WhatsApp...
+2025-08-06 16:21:15: 🔍 Chrome trouvé: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-08-06 16:21:15: ✅ Routes API additionnelles configurées
+2025-08-06 16:21:15: 🚀 Début de l'initialisation du client WhatsApp: 2025-08-06T15:21:15.919Z
+2025-08-06 16:21:15: 🚀 Backend lancé sur http://0.0.0.0:5001
+2025-08-06 16:21:15: 📡 Serveur accessible depuis l'extérieur sur le port 5001
+2025-08-06 16:21:15: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:21:15: {
+2025-08-06 16:21:15:   whatsappReady: false,
+2025-08-06 16:21:15:   whatsappAuthenticated: false,
+2025-08-06 16:21:15:   hasQrCode: false,
+2025-08-06 16:21:15:   clientInitialized: true,
+2025-08-06 16:21:15:   socketConnected: true
+2025-08-06 16:21:15: }
+2025-08-06 16:21:15: ⚠️ Pas de QR code après 30 secondes, réinitialisation...
+2025-08-06 16:21:15: Erreur lors de la destruction du client: TypeError: Cannot read properties of null (reading 'close')
+2025-08-06 16:21:15:     at Client.destroy (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\src\Client.js:782:31)
+2025-08-06 16:21:15:     at fullWhatsAppReset (C:\test1\whatslandllt\backend\server.js:1959:22)
+2025-08-06 16:21:15:     at checkServerHealth (C:\test1\whatslandllt\backend\server.js:3200:17)
+2025-08-06 16:21:15:     at Server.<anonymous> (C:\test1\whatslandllt\backend\server.js:3214:5)
+2025-08-06 16:21:15:     at Object.onceWrapper (node:events:632:28)
+2025-08-06 16:21:15:     at Server.emit (node:events:530:35)
+2025-08-06 16:21:15:     at Server.<anonymous> (C:\Users\salam\AppData\Roaming\npm\node_modules\pm2\node_modules\@pm2\io\build\main\metrics\httpMetrics.js:153:37)
+2025-08-06 16:21:15:     at emitListeningNT (node:net:1983:10)
+2025-08-06 16:21:15:     at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+2025-08-06 16:21:15: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:21:15: Doublons d'email nettoyés
+2025-08-06 16:21:15: ✅ Connexion à la base de données établie avec succès
+2025-08-06 16:21:15: ✅ Intégrité de la base de données SQLite vérifiée
+2025-08-06 16:21:15: 🔑 Service account key trouvé et validé
+2025-08-06 16:21:16: 🔑 Utilisation du service account file
+2025-08-06 16:21:17: ✅ Realtime Database initialisé
+2025-08-06 16:21:17: 🔄 Tentative de synchronisation alternative...
+2025-08-06 16:21:17: ✅ Synchronisation alternative réussie
+2025-08-06 16:21:18: ℹ️ Realtime Database disponible mais accès en lecture seule
+2025-08-06 16:21:18: ✅ Services Firebase configurés
+2025-08-06 16:21:18: ✅ Connexion Firebase Auth testée
+2025-08-06 16:21:20: ✅ Connexion Firestore testée
+2025-08-06 16:21:20: ✅ Firebase initialisé avec succès
+2025-08-06 16:21:22: 📱 Début de génération du QR Code: 2025-08-06T15:21:22.823Z
+2025-08-06 16:21:22: ✅ QR Code généré en 113ms
+2025-08-06 16:21:22: 📢 QR Code envoyé aux clients
+2025-08-06 16:21:22: ✅ Client WhatsApp initialisé en 7033ms
+2025-08-06 16:21:30: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:21:30: {
+2025-08-06 16:21:30:   whatsappReady: false,
+2025-08-06 16:21:30:   whatsappAuthenticated: false,
+2025-08-06 16:21:30:   hasQrCode: true,
+2025-08-06 16:21:30:   clientInitialized: true,
+2025-08-06 16:21:30:   socketConnected: true
+2025-08-06 16:21:30: }
+2025-08-06 16:21:44: ✅ Processus Chrome tués avec succès
+2025-08-06 16:21:44: ✅ Processus Chrome tués avec succès
+2025-08-06 16:21:44: 🧹 Nettoyage des répertoires de session...
+2025-08-06 16:21:44: ✅ Répertoire supprimé: .wwebjs_cache
+2025-08-06 16:21:44: ✅ Répertoires de session nettoyés avec succès
+2025-08-06 16:21:44: ✅ Répertoires de session nettoyés avec succès
+2025-08-06 16:21:44: ⏳ Attente avant création du nouveau client...
+2025-08-06 16:21:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:21:46: {
+2025-08-06 16:21:46:   whatsappReady: false,
+2025-08-06 16:21:46:   whatsappAuthenticated: false,
+2025-08-06 16:21:46:   hasQrCode: true,
+2025-08-06 16:21:46:   clientInitialized: true,
+2025-08-06 16:21:46:   socketConnected: true
+2025-08-06 16:21:46: }
+2025-08-06 16:21:47: 🔍 Chrome trouvé: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-08-06 16:21:47: Initialisation d'un nouveau client WhatsApp
+2025-08-06 16:21:57: 📱 Nouveau QR Code généré!
+2025-08-06 16:21:57: ✅ Client WhatsApp initialisé avec succès
+2025-08-06 16:22:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:22:01: {
+2025-08-06 16:22:01:   whatsappReady: false,
+2025-08-06 16:22:01:   whatsappAuthenticated: false,
+2025-08-06 16:22:01:   hasQrCode: true,
+2025-08-06 16:22:01:   clientInitialized: true,
+2025-08-06 16:22:01:   socketConnected: true
+2025-08-06 16:22:01: }
+2025-08-06 16:22:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:22:16: {
+2025-08-06 16:22:16:   whatsappReady: false,
+2025-08-06 16:22:16:   whatsappAuthenticated: false,
+2025-08-06 16:22:16:   hasQrCode: true,
+2025-08-06 16:22:16:   clientInitialized: true,
+2025-08-06 16:22:16:   socketConnected: true
+2025-08-06 16:22:16: }
+2025-08-06 16:22:22: 📱 Début de génération du QR Code: 2025-08-06T15:22:22.720Z
+2025-08-06 16:22:22: ✅ QR Code généré en 62ms
+2025-08-06 16:22:22: 📢 QR Code envoyé aux clients
+2025-08-06 16:22:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:22:31: {
+2025-08-06 16:22:31:   whatsappReady: false,
+2025-08-06 16:22:31:   whatsappAuthenticated: false,
+2025-08-06 16:22:31:   hasQrCode: true,
+2025-08-06 16:22:31:   clientInitialized: true,
+2025-08-06 16:22:31:   socketConnected: true
+2025-08-06 16:22:31: }
+2025-08-06 16:22:42: 📱 Début de génération du QR Code: 2025-08-06T15:22:42.726Z
+2025-08-06 16:22:42: ✅ QR Code généré en 41ms
+2025-08-06 16:22:42: 📢 QR Code envoyé aux clients
+2025-08-06 16:22:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:22:46: {
+2025-08-06 16:22:46:   whatsappReady: false,
+2025-08-06 16:22:46:   whatsappAuthenticated: false,
+2025-08-06 16:22:46:   hasQrCode: true,
+2025-08-06 16:22:46:   clientInitialized: true,
+2025-08-06 16:22:46:   socketConnected: true
+2025-08-06 16:22:46: }
+2025-08-06 16:22:56: 📱 Nouveau QR Code généré!
+2025-08-06 16:23:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:23:01: {
+2025-08-06 16:23:01:   whatsappReady: false,
+2025-08-06 16:23:01:   whatsappAuthenticated: false,
+2025-08-06 16:23:01:   hasQrCode: true,
+2025-08-06 16:23:01:   clientInitialized: true,
+2025-08-06 16:23:01:   socketConnected: true
+2025-08-06 16:23:01: }
+2025-08-06 16:23:02: 📱 Début de génération du QR Code: 2025-08-06T15:23:02.734Z
+2025-08-06 16:23:02: ✅ QR Code généré en 75ms
+2025-08-06 16:23:02: 📢 QR Code envoyé aux clients
+2025-08-06 16:23:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:23:16: {
+2025-08-06 16:23:16:   whatsappReady: false,
+2025-08-06 16:23:16:   whatsappAuthenticated: false,
+2025-08-06 16:23:16:   hasQrCode: true,
+2025-08-06 16:23:16:   clientInitialized: true,
+2025-08-06 16:23:16:   socketConnected: true
+2025-08-06 16:23:16: }
+2025-08-06 16:23:16: 📱 Nouveau QR Code généré!
+2025-08-06 16:23:22: 📱 Début de génération du QR Code: 2025-08-06T15:23:22.740Z
+2025-08-06 16:23:22: ✅ QR Code généré en 53ms
+2025-08-06 16:23:22: 📢 QR Code envoyé aux clients
+2025-08-06 16:23:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:23:31: {
+2025-08-06 16:23:31:   whatsappReady: false,
+2025-08-06 16:23:31:   whatsappAuthenticated: false,
+2025-08-06 16:23:31:   hasQrCode: true,
+2025-08-06 16:23:31:   clientInitialized: true,
+2025-08-06 16:23:31:   socketConnected: true
+2025-08-06 16:23:31: }
+2025-08-06 16:23:36: 📱 Nouveau QR Code généré!
+2025-08-06 16:23:42: 📱 Début de génération du QR Code: 2025-08-06T15:23:42.747Z
+2025-08-06 16:23:42: 🔌 Déconnecté de WhatsApp: Max qrcode retries reached
+2025-08-06 16:23:42: ✅ QR Code généré en 75ms
+2025-08-06 16:23:42: 📢 QR Code envoyé aux clients
+2025-08-06 16:23:43: ✅ Client WhatsApp détruit avec succès
+2025-08-06 16:23:43: 🔍 Chrome trouvé: C:\Program Files\Google\Chrome\Application\chrome.exe
+2025-08-06 16:23:43: ✅ Nouveau client WhatsApp créé
+2025-08-06 16:23:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:23:46: {
+2025-08-06 16:23:46:   whatsappReady: false,
+2025-08-06 16:23:46:   whatsappAuthenticated: false,
+2025-08-06 16:23:46:   hasQrCode: true,
+2025-08-06 16:23:46:   clientInitialized: true,
+2025-08-06 16:23:46:   socketConnected: true
+2025-08-06 16:23:46: }
+2025-08-06 16:23:49: Nouveau QR Code généré!
+2025-08-06 16:23:49: ✅ Client WhatsApp initialisé avec succès
+2025-08-06 16:24:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:24:01: {
+2025-08-06 16:24:01:   whatsappReady: false,
+2025-08-06 16:24:01:   whatsappAuthenticated: false,
+2025-08-06 16:24:01:   hasQrCode: true,
+2025-08-06 16:24:01:   clientInitialized: true,
+2025-08-06 16:24:01:   socketConnected: true
+2025-08-06 16:24:01: }
+2025-08-06 16:24:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:24:16: {
+2025-08-06 16:24:16:   whatsappReady: false,
+2025-08-06 16:24:16:   whatsappAuthenticated: false,
+2025-08-06 16:24:16:   hasQrCode: true,
+2025-08-06 16:24:16:   clientInitialized: true,
+2025-08-06 16:24:16:   socketConnected: true
+2025-08-06 16:24:16: }
+2025-08-06 16:24:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:24:31: {
+2025-08-06 16:24:31:   whatsappReady: false,
+2025-08-06 16:24:31:   whatsappAuthenticated: false,
+2025-08-06 16:24:31:   hasQrCode: true,
+2025-08-06 16:24:31:   clientInitialized: true,
+2025-08-06 16:24:31:   socketConnected: true
+2025-08-06 16:24:31: }
+2025-08-06 16:24:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:24:46: {
+2025-08-06 16:24:46:   whatsappReady: false,
+2025-08-06 16:24:46:   whatsappAuthenticated: false,
+2025-08-06 16:24:46:   hasQrCode: true,
+2025-08-06 16:24:46:   clientInitialized: true,
+2025-08-06 16:24:46:   socketConnected: true
+2025-08-06 16:24:46: }
+2025-08-06 16:24:49: Nouveau QR Code généré!
+2025-08-06 16:25:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:25:01: {
+2025-08-06 16:25:01:   whatsappReady: false,
+2025-08-06 16:25:01:   whatsappAuthenticated: false,
+2025-08-06 16:25:01:   hasQrCode: true,
+2025-08-06 16:25:01:   clientInitialized: true,
+2025-08-06 16:25:01:   socketConnected: true
+2025-08-06 16:25:01: }
+2025-08-06 16:25:09: Nouveau QR Code généré!
+2025-08-06 16:25:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:25:16: {
+2025-08-06 16:25:16:   whatsappReady: false,
+2025-08-06 16:25:16:   whatsappAuthenticated: false,
+2025-08-06 16:25:16:   hasQrCode: true,
+2025-08-06 16:25:16:   clientInitialized: true,
+2025-08-06 16:25:16:   socketConnected: true
+2025-08-06 16:25:16: }
+2025-08-06 16:25:29: Nouveau QR Code généré!
+2025-08-06 16:25:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:25:31: {
+2025-08-06 16:25:31:   whatsappReady: false,
+2025-08-06 16:25:31:   whatsappAuthenticated: false,
+2025-08-06 16:25:31:   hasQrCode: true,
+2025-08-06 16:25:31:   clientInitialized: true,
+2025-08-06 16:25:31:   socketConnected: true
+2025-08-06 16:25:31: }
+2025-08-06 16:25:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:25:46: {
+2025-08-06 16:25:46:   whatsappReady: false,
+2025-08-06 16:25:46:   whatsappAuthenticated: false,
+2025-08-06 16:25:46:   hasQrCode: true,
+2025-08-06 16:25:46:   clientInitialized: true,
+2025-08-06 16:25:46:   socketConnected: true
+2025-08-06 16:25:46: }
+2025-08-06 16:25:49: Nouveau QR Code généré!
+2025-08-06 16:26:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:26:01: {
+2025-08-06 16:26:01:   whatsappReady: false,
+2025-08-06 16:26:01:   whatsappAuthenticated: false,
+2025-08-06 16:26:01:   hasQrCode: true,
+2025-08-06 16:26:01:   clientInitialized: true,
+2025-08-06 16:26:01:   socketConnected: true
+2025-08-06 16:26:01: }
+2025-08-06 16:26:09: Nouveau QR Code généré!
+2025-08-06 16:26:15: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 16:26:15: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:26:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:26:16: {
+2025-08-06 16:26:16:   whatsappReady: false,
+2025-08-06 16:26:16:   whatsappAuthenticated: false,
+2025-08-06 16:26:16:   hasQrCode: true,
+2025-08-06 16:26:16:   clientInitialized: true,
+2025-08-06 16:26:16:   socketConnected: true
+2025-08-06 16:26:16: }
+2025-08-06 16:26:28: ✅ Processus Chrome tués avec succès
+2025-08-06 16:26:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:26:31: {
+2025-08-06 16:26:31:   whatsappReady: false,
+2025-08-06 16:26:31:   whatsappAuthenticated: false,
+2025-08-06 16:26:31:   hasQrCode: true,
+2025-08-06 16:26:31:   clientInitialized: true,
+2025-08-06 16:26:31:   socketConnected: true
+2025-08-06 16:26:31: }
+2025-08-06 16:26:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:26:46: {
+2025-08-06 16:26:46:   whatsappReady: false,
+2025-08-06 16:26:46:   whatsappAuthenticated: false,
+2025-08-06 16:26:46:   hasQrCode: true,
+2025-08-06 16:26:46:   clientInitialized: true,
+2025-08-06 16:26:46:   socketConnected: true
+2025-08-06 16:26:46: }
+2025-08-06 16:27:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:27:01: {
+2025-08-06 16:27:01:   whatsappReady: false,
+2025-08-06 16:27:01:   whatsappAuthenticated: false,
+2025-08-06 16:27:01:   hasQrCode: true,
+2025-08-06 16:27:01:   clientInitialized: true,
+2025-08-06 16:27:01:   socketConnected: true
+2025-08-06 16:27:01: }
+2025-08-06 16:27:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:27:16: {
+2025-08-06 16:27:16:   whatsappReady: false,
+2025-08-06 16:27:16:   whatsappAuthenticated: false,
+2025-08-06 16:27:16:   hasQrCode: true,
+2025-08-06 16:27:16:   clientInitialized: true,
+2025-08-06 16:27:16:   socketConnected: true
+2025-08-06 16:27:16: }
+2025-08-06 16:27:20: Nouveau QR Code généré!
+2025-08-06 16:27:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:27:31: {
+2025-08-06 16:27:31:   whatsappReady: false,
+2025-08-06 16:27:31:   whatsappAuthenticated: false,
+2025-08-06 16:27:31:   hasQrCode: true,
+2025-08-06 16:27:31:   clientInitialized: true,
+2025-08-06 16:27:31:   socketConnected: true
+2025-08-06 16:27:31: }
+2025-08-06 16:27:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:27:46: {
+2025-08-06 16:27:46:   whatsappReady: false,
+2025-08-06 16:27:46:   whatsappAuthenticated: false,
+2025-08-06 16:27:46:   hasQrCode: true,
+2025-08-06 16:27:46:   clientInitialized: true,
+2025-08-06 16:27:46:   socketConnected: true
+2025-08-06 16:27:46: }
+2025-08-06 16:28:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:28:01: {
+2025-08-06 16:28:01:   whatsappReady: false,
+2025-08-06 16:28:01:   whatsappAuthenticated: false,
+2025-08-06 16:28:01:   hasQrCode: true,
+2025-08-06 16:28:01:   clientInitialized: true,
+2025-08-06 16:28:01:   socketConnected: true
+2025-08-06 16:28:01: }
+2025-08-06 16:28:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:28:16: {
+2025-08-06 16:28:16:   whatsappReady: false,
+2025-08-06 16:28:16:   whatsappAuthenticated: false,
+2025-08-06 16:28:16:   hasQrCode: true,
+2025-08-06 16:28:16:   clientInitialized: true,
+2025-08-06 16:28:16:   socketConnected: true
+2025-08-06 16:28:16: }
+2025-08-06 16:28:20: Nouveau QR Code généré!
+2025-08-06 16:28:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:28:31: {
+2025-08-06 16:28:31:   whatsappReady: false,
+2025-08-06 16:28:31:   whatsappAuthenticated: false,
+2025-08-06 16:28:31:   hasQrCode: true,
+2025-08-06 16:28:31:   clientInitialized: true,
+2025-08-06 16:28:31:   socketConnected: true
+2025-08-06 16:28:31: }
+2025-08-06 16:28:40: Nouveau QR Code généré!
+2025-08-06 16:28:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:28:46: {
+2025-08-06 16:28:46:   whatsappReady: false,
+2025-08-06 16:28:46:   whatsappAuthenticated: false,
+2025-08-06 16:28:46:   hasQrCode: true,
+2025-08-06 16:28:46:   clientInitialized: true,
+2025-08-06 16:28:46:   socketConnected: true
+2025-08-06 16:28:46: }
+2025-08-06 16:29:00: Nouveau QR Code généré!
+2025-08-06 16:29:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:29:01: {
+2025-08-06 16:29:01:   whatsappReady: false,
+2025-08-06 16:29:01:   whatsappAuthenticated: false,
+2025-08-06 16:29:01:   hasQrCode: true,
+2025-08-06 16:29:01:   clientInitialized: true,
+2025-08-06 16:29:01:   socketConnected: true
+2025-08-06 16:29:01: }
+2025-08-06 16:29:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:29:16: {
+2025-08-06 16:29:16:   whatsappReady: false,
+2025-08-06 16:29:16:   whatsappAuthenticated: false,
+2025-08-06 16:29:16:   hasQrCode: true,
+2025-08-06 16:29:16:   clientInitialized: true,
+2025-08-06 16:29:16:   socketConnected: true
+2025-08-06 16:29:16: }
+2025-08-06 16:29:20: Nouveau QR Code généré!
+2025-08-06 16:29:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:29:31: {
+2025-08-06 16:29:31:   whatsappReady: false,
+2025-08-06 16:29:31:   whatsappAuthenticated: false,
+2025-08-06 16:29:31:   hasQrCode: true,
+2025-08-06 16:29:31:   clientInitialized: true,
+2025-08-06 16:29:31:   socketConnected: true
+2025-08-06 16:29:31: }
+2025-08-06 16:29:40: Nouveau QR Code généré!
+2025-08-06 16:29:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:29:46: {
+2025-08-06 16:29:46:   whatsappReady: false,
+2025-08-06 16:29:46:   whatsappAuthenticated: false,
+2025-08-06 16:29:46:   hasQrCode: true,
+2025-08-06 16:29:46:   clientInitialized: true,
+2025-08-06 16:29:46:   socketConnected: true
+2025-08-06 16:29:46: }
+2025-08-06 16:30:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:30:01: {
+2025-08-06 16:30:01:   whatsappReady: false,
+2025-08-06 16:30:01:   whatsappAuthenticated: false,
+2025-08-06 16:30:01:   hasQrCode: true,
+2025-08-06 16:30:01:   clientInitialized: true,
+2025-08-06 16:30:01:   socketConnected: true
+2025-08-06 16:30:01: }
+2025-08-06 16:30:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:30:16: {
+2025-08-06 16:30:16:   whatsappReady: false,
+2025-08-06 16:30:16:   whatsappAuthenticated: false,
+2025-08-06 16:30:16:   hasQrCode: true,
+2025-08-06 16:30:16:   clientInitialized: true,
+2025-08-06 16:30:16:   socketConnected: true
+2025-08-06 16:30:16: }
+2025-08-06 16:30:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:30:31: {
+2025-08-06 16:30:31:   whatsappReady: false,
+2025-08-06 16:30:31:   whatsappAuthenticated: false,
+2025-08-06 16:30:31:   hasQrCode: true,
+2025-08-06 16:30:31:   clientInitialized: true,
+2025-08-06 16:30:31:   socketConnected: true
+2025-08-06 16:30:31: }
+2025-08-06 16:30:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:30:46: {
+2025-08-06 16:30:46:   whatsappReady: false,
+2025-08-06 16:30:46:   whatsappAuthenticated: false,
+2025-08-06 16:30:46:   hasQrCode: true,
+2025-08-06 16:30:46:   clientInitialized: true,
+2025-08-06 16:30:46:   socketConnected: true
+2025-08-06 16:30:46: }
+2025-08-06 16:30:50: Nouveau QR Code généré!
+2025-08-06 16:31:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:31:01: {
+2025-08-06 16:31:01:   whatsappReady: false,
+2025-08-06 16:31:01:   whatsappAuthenticated: false,
+2025-08-06 16:31:01:   hasQrCode: true,
+2025-08-06 16:31:01:   clientInitialized: true,
+2025-08-06 16:31:01:   socketConnected: true
+2025-08-06 16:31:01: }
+2025-08-06 16:31:15: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 16:31:15: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:31:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:31:16: {
+2025-08-06 16:31:16:   whatsappReady: false,
+2025-08-06 16:31:16:   whatsappAuthenticated: false,
+2025-08-06 16:31:16:   hasQrCode: true,
+2025-08-06 16:31:16:   clientInitialized: true,
+2025-08-06 16:31:16:   socketConnected: true
+2025-08-06 16:31:16: }
+2025-08-06 16:31:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:31:31: {
+2025-08-06 16:31:31:   whatsappReady: false,
+2025-08-06 16:31:31:   whatsappAuthenticated: false,
+2025-08-06 16:31:31:   hasQrCode: true,
+2025-08-06 16:31:31:   clientInitialized: true,
+2025-08-06 16:31:31:   socketConnected: true
+2025-08-06 16:31:31: }
+2025-08-06 16:31:36: ✅ Processus Chrome tués avec succès
+2025-08-06 16:31:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:31:46: {
+2025-08-06 16:31:46:   whatsappReady: false,
+2025-08-06 16:31:46:   whatsappAuthenticated: false,
+2025-08-06 16:31:46:   hasQrCode: true,
+2025-08-06 16:31:46:   clientInitialized: true,
+2025-08-06 16:31:46:   socketConnected: true
+2025-08-06 16:31:46: }
+2025-08-06 16:31:50: Nouveau QR Code généré!
+2025-08-06 16:32:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:32:01: {
+2025-08-06 16:32:01:   whatsappReady: false,
+2025-08-06 16:32:01:   whatsappAuthenticated: false,
+2025-08-06 16:32:01:   hasQrCode: true,
+2025-08-06 16:32:01:   clientInitialized: true,
+2025-08-06 16:32:01:   socketConnected: true
+2025-08-06 16:32:01: }
+2025-08-06 16:32:10: Nouveau QR Code généré!
+2025-08-06 16:32:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:32:16: {
+2025-08-06 16:32:16:   whatsappReady: false,
+2025-08-06 16:32:16:   whatsappAuthenticated: false,
+2025-08-06 16:32:16:   hasQrCode: true,
+2025-08-06 16:32:16:   clientInitialized: true,
+2025-08-06 16:32:16:   socketConnected: true
+2025-08-06 16:32:16: }
+2025-08-06 16:32:30: Nouveau QR Code généré!
+2025-08-06 16:32:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:32:31: {
+2025-08-06 16:32:31:   whatsappReady: false,
+2025-08-06 16:32:31:   whatsappAuthenticated: false,
+2025-08-06 16:32:31:   hasQrCode: true,
+2025-08-06 16:32:31:   clientInitialized: true,
+2025-08-06 16:32:31:   socketConnected: true
+2025-08-06 16:32:31: }
+2025-08-06 16:32:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:32:46: {
+2025-08-06 16:32:46:   whatsappReady: false,
+2025-08-06 16:32:46:   whatsappAuthenticated: false,
+2025-08-06 16:32:46:   hasQrCode: true,
+2025-08-06 16:32:46:   clientInitialized: true,
+2025-08-06 16:32:46:   socketConnected: true
+2025-08-06 16:32:46: }
+2025-08-06 16:32:50: Nouveau QR Code généré!
+2025-08-06 16:33:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:33:01: {
+2025-08-06 16:33:01:   whatsappReady: false,
+2025-08-06 16:33:01:   whatsappAuthenticated: false,
+2025-08-06 16:33:01:   hasQrCode: true,
+2025-08-06 16:33:01:   clientInitialized: true,
+2025-08-06 16:33:01:   socketConnected: true
+2025-08-06 16:33:01: }
+2025-08-06 16:33:10: Nouveau QR Code généré!
+2025-08-06 16:33:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:33:16: {
+2025-08-06 16:33:16:   whatsappReady: false,
+2025-08-06 16:33:16:   whatsappAuthenticated: false,
+2025-08-06 16:33:16:   hasQrCode: true,
+2025-08-06 16:33:16:   clientInitialized: true,
+2025-08-06 16:33:16:   socketConnected: true
+2025-08-06 16:33:16: }
+2025-08-06 16:33:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:33:31: {
+2025-08-06 16:33:31:   whatsappReady: false,
+2025-08-06 16:33:31:   whatsappAuthenticated: false,
+2025-08-06 16:33:31:   hasQrCode: true,
+2025-08-06 16:33:31:   clientInitialized: true,
+2025-08-06 16:33:31:   socketConnected: true
+2025-08-06 16:33:31: }
+2025-08-06 16:33:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:33:46: {
+2025-08-06 16:33:46:   whatsappReady: false,
+2025-08-06 16:33:46:   whatsappAuthenticated: false,
+2025-08-06 16:33:46:   hasQrCode: true,
+2025-08-06 16:33:46:   clientInitialized: true,
+2025-08-06 16:33:46:   socketConnected: true
+2025-08-06 16:33:46: }
+2025-08-06 16:34:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:34:01: {
+2025-08-06 16:34:01:   whatsappReady: false,
+2025-08-06 16:34:01:   whatsappAuthenticated: false,
+2025-08-06 16:34:01:   hasQrCode: true,
+2025-08-06 16:34:01:   clientInitialized: true,
+2025-08-06 16:34:01:   socketConnected: true
+2025-08-06 16:34:01: }
+2025-08-06 16:34:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:34:16: {
+2025-08-06 16:34:16:   whatsappReady: false,
+2025-08-06 16:34:16:   whatsappAuthenticated: false,
+2025-08-06 16:34:16:   hasQrCode: true,
+2025-08-06 16:34:16:   clientInitialized: true,
+2025-08-06 16:34:16:   socketConnected: true
+2025-08-06 16:34:16: }
+2025-08-06 16:34:21: Nouveau QR Code généré!
+2025-08-06 16:34:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:34:31: {
+2025-08-06 16:34:31:   whatsappReady: false,
+2025-08-06 16:34:31:   whatsappAuthenticated: false,
+2025-08-06 16:34:31:   hasQrCode: true,
+2025-08-06 16:34:31:   clientInitialized: true,
+2025-08-06 16:34:31:   socketConnected: true
+2025-08-06 16:34:31: }
+2025-08-06 16:34:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:34:46: {
+2025-08-06 16:34:46:   whatsappReady: false,
+2025-08-06 16:34:46:   whatsappAuthenticated: false,
+2025-08-06 16:34:46:   hasQrCode: true,
+2025-08-06 16:34:46:   clientInitialized: true,
+2025-08-06 16:34:46:   socketConnected: true
+2025-08-06 16:34:46: }
+2025-08-06 16:35:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:35:01: {
+2025-08-06 16:35:01:   whatsappReady: false,
+2025-08-06 16:35:01:   whatsappAuthenticated: false,
+2025-08-06 16:35:01:   hasQrCode: true,
+2025-08-06 16:35:01:   clientInitialized: true,
+2025-08-06 16:35:01:   socketConnected: true
+2025-08-06 16:35:01: }
+2025-08-06 16:35:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:35:16: {
+2025-08-06 16:35:16:   whatsappReady: false,
+2025-08-06 16:35:16:   whatsappAuthenticated: false,
+2025-08-06 16:35:16:   hasQrCode: true,
+2025-08-06 16:35:16:   clientInitialized: true,
+2025-08-06 16:35:16:   socketConnected: true
+2025-08-06 16:35:16: }
+2025-08-06 16:35:21: Nouveau QR Code généré!
+2025-08-06 16:35:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:35:31: {
+2025-08-06 16:35:31:   whatsappReady: false,
+2025-08-06 16:35:31:   whatsappAuthenticated: false,
+2025-08-06 16:35:31:   hasQrCode: true,
+2025-08-06 16:35:31:   clientInitialized: true,
+2025-08-06 16:35:31:   socketConnected: true
+2025-08-06 16:35:31: }
+2025-08-06 16:35:41: Nouveau QR Code généré!
+2025-08-06 16:35:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:35:46: {
+2025-08-06 16:35:46:   whatsappReady: false,
+2025-08-06 16:35:46:   whatsappAuthenticated: false,
+2025-08-06 16:35:46:   hasQrCode: true,
+2025-08-06 16:35:46:   clientInitialized: true,
+2025-08-06 16:35:46:   socketConnected: true
+2025-08-06 16:35:46: }
+2025-08-06 16:36:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:36:01: {
+2025-08-06 16:36:01:   whatsappReady: false,
+2025-08-06 16:36:01:   whatsappAuthenticated: false,
+2025-08-06 16:36:01:   hasQrCode: true,
+2025-08-06 16:36:01:   clientInitialized: true,
+2025-08-06 16:36:01:   socketConnected: true
+2025-08-06 16:36:01: }
+2025-08-06 16:36:01: Nouveau QR Code généré!
+2025-08-06 16:36:15: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 16:36:15: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:36:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:36:16: {
+2025-08-06 16:36:16:   whatsappReady: false,
+2025-08-06 16:36:16:   whatsappAuthenticated: false,
+2025-08-06 16:36:16:   hasQrCode: true,
+2025-08-06 16:36:16:   clientInitialized: true,
+2025-08-06 16:36:16:   socketConnected: true
+2025-08-06 16:36:16: }
+2025-08-06 16:36:21: Nouveau QR Code généré!
+2025-08-06 16:36:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:36:31: {
+2025-08-06 16:36:31:   whatsappReady: false,
+2025-08-06 16:36:31:   whatsappAuthenticated: false,
+2025-08-06 16:36:31:   hasQrCode: true,
+2025-08-06 16:36:31:   clientInitialized: true,
+2025-08-06 16:36:31:   socketConnected: true
+2025-08-06 16:36:31: }
+2025-08-06 16:36:34: ✅ Processus Chrome tués avec succès
+2025-08-06 16:36:41: Nouveau QR Code généré!
+2025-08-06 16:36:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:36:46: {
+2025-08-06 16:36:46:   whatsappReady: false,
+2025-08-06 16:36:46:   whatsappAuthenticated: false,
+2025-08-06 16:36:46:   hasQrCode: true,
+2025-08-06 16:36:46:   clientInitialized: true,
+2025-08-06 16:36:46:   socketConnected: true
+2025-08-06 16:36:46: }
+2025-08-06 16:37:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:37:01: {
+2025-08-06 16:37:01:   whatsappReady: false,
+2025-08-06 16:37:01:   whatsappAuthenticated: false,
+2025-08-06 16:37:01:   hasQrCode: true,
+2025-08-06 16:37:01:   clientInitialized: true,
+2025-08-06 16:37:01:   socketConnected: true
+2025-08-06 16:37:01: }
+2025-08-06 16:37:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:37:16: {
+2025-08-06 16:37:16:   whatsappReady: false,
+2025-08-06 16:37:16:   whatsappAuthenticated: false,
+2025-08-06 16:37:16:   hasQrCode: true,
+2025-08-06 16:37:16:   clientInitialized: true,
+2025-08-06 16:37:16:   socketConnected: true
+2025-08-06 16:37:16: }
+2025-08-06 16:37:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:37:31: {
+2025-08-06 16:37:31:   whatsappReady: false,
+2025-08-06 16:37:31:   whatsappAuthenticated: false,
+2025-08-06 16:37:31:   hasQrCode: true,
+2025-08-06 16:37:31:   clientInitialized: true,
+2025-08-06 16:37:31:   socketConnected: true
+2025-08-06 16:37:31: }
+2025-08-06 16:37:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:37:46: {
+2025-08-06 16:37:46:   whatsappReady: false,
+2025-08-06 16:37:46:   whatsappAuthenticated: false,
+2025-08-06 16:37:46:   hasQrCode: true,
+2025-08-06 16:37:46:   clientInitialized: true,
+2025-08-06 16:37:46:   socketConnected: true
+2025-08-06 16:37:46: }
+2025-08-06 16:37:52: Nouveau QR Code généré!
+2025-08-06 16:38:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:38:01: {
+2025-08-06 16:38:01:   whatsappReady: false,
+2025-08-06 16:38:01:   whatsappAuthenticated: false,
+2025-08-06 16:38:01:   hasQrCode: true,
+2025-08-06 16:38:01:   clientInitialized: true,
+2025-08-06 16:38:01:   socketConnected: true
+2025-08-06 16:38:01: }
+2025-08-06 16:38:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:38:16: {
+2025-08-06 16:38:16:   whatsappReady: false,
+2025-08-06 16:38:16:   whatsappAuthenticated: false,
+2025-08-06 16:38:16:   hasQrCode: true,
+2025-08-06 16:38:16:   clientInitialized: true,
+2025-08-06 16:38:16:   socketConnected: true
+2025-08-06 16:38:16: }
+2025-08-06 16:38:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:38:31: {
+2025-08-06 16:38:31:   whatsappReady: false,
+2025-08-06 16:38:31:   whatsappAuthenticated: false,
+2025-08-06 16:38:31:   hasQrCode: true,
+2025-08-06 16:38:31:   clientInitialized: true,
+2025-08-06 16:38:31:   socketConnected: true
+2025-08-06 16:38:31: }
+2025-08-06 16:38:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:38:46: {
+2025-08-06 16:38:46:   whatsappReady: false,
+2025-08-06 16:38:46:   whatsappAuthenticated: false,
+2025-08-06 16:38:46:   hasQrCode: true,
+2025-08-06 16:38:46:   clientInitialized: true,
+2025-08-06 16:38:46:   socketConnected: true
+2025-08-06 16:38:46: }
+2025-08-06 16:38:52: Nouveau QR Code généré!
+2025-08-06 16:39:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:39:01: {
+2025-08-06 16:39:01:   whatsappReady: false,
+2025-08-06 16:39:01:   whatsappAuthenticated: false,
+2025-08-06 16:39:01:   hasQrCode: true,
+2025-08-06 16:39:01:   clientInitialized: true,
+2025-08-06 16:39:01:   socketConnected: true
+2025-08-06 16:39:01: }
+2025-08-06 16:39:12: Nouveau QR Code généré!
+2025-08-06 16:39:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:39:16: {
+2025-08-06 16:39:16:   whatsappReady: false,
+2025-08-06 16:39:16:   whatsappAuthenticated: false,
+2025-08-06 16:39:16:   hasQrCode: true,
+2025-08-06 16:39:16:   clientInitialized: true,
+2025-08-06 16:39:16:   socketConnected: true
+2025-08-06 16:39:16: }
+2025-08-06 16:39:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:39:31: {
+2025-08-06 16:39:31:   whatsappReady: false,
+2025-08-06 16:39:31:   whatsappAuthenticated: false,
+2025-08-06 16:39:31:   hasQrCode: true,
+2025-08-06 16:39:31:   clientInitialized: true,
+2025-08-06 16:39:31:   socketConnected: true
+2025-08-06 16:39:31: }
+2025-08-06 16:39:32: Nouveau QR Code généré!
+2025-08-06 16:39:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:39:46: {
+2025-08-06 16:39:46:   whatsappReady: false,
+2025-08-06 16:39:46:   whatsappAuthenticated: false,
+2025-08-06 16:39:46:   hasQrCode: true,
+2025-08-06 16:39:46:   clientInitialized: true,
+2025-08-06 16:39:46:   socketConnected: true
+2025-08-06 16:39:46: }
+2025-08-06 16:39:52: Nouveau QR Code généré!
+2025-08-06 16:40:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:40:01: {
+2025-08-06 16:40:01:   whatsappReady: false,
+2025-08-06 16:40:01:   whatsappAuthenticated: false,
+2025-08-06 16:40:01:   hasQrCode: true,
+2025-08-06 16:40:01:   clientInitialized: true,
+2025-08-06 16:40:01:   socketConnected: true
+2025-08-06 16:40:01: }
+2025-08-06 16:40:12: Nouveau QR Code généré!
+2025-08-06 16:40:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:40:16: {
+2025-08-06 16:40:16:   whatsappReady: false,
+2025-08-06 16:40:16:   whatsappAuthenticated: false,
+2025-08-06 16:40:16:   hasQrCode: true,
+2025-08-06 16:40:16:   clientInitialized: true,
+2025-08-06 16:40:16:   socketConnected: true
+2025-08-06 16:40:16: }
+2025-08-06 16:40:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:40:31: {
+2025-08-06 16:40:31:   whatsappReady: false,
+2025-08-06 16:40:31:   whatsappAuthenticated: false,
+2025-08-06 16:40:31:   hasQrCode: true,
+2025-08-06 16:40:31:   clientInitialized: true,
+2025-08-06 16:40:31:   socketConnected: true
+2025-08-06 16:40:31: }
+2025-08-06 16:40:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:40:46: {
+2025-08-06 16:40:46:   whatsappReady: false,
+2025-08-06 16:40:46:   whatsappAuthenticated: false,
+2025-08-06 16:40:46:   hasQrCode: true,
+2025-08-06 16:40:46:   clientInitialized: true,
+2025-08-06 16:40:46:   socketConnected: true
+2025-08-06 16:40:46: }
+2025-08-06 16:41:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:41:01: {
+2025-08-06 16:41:01:   whatsappReady: false,
+2025-08-06 16:41:01:   whatsappAuthenticated: false,
+2025-08-06 16:41:01:   hasQrCode: true,
+2025-08-06 16:41:01:   clientInitialized: true,
+2025-08-06 16:41:01:   socketConnected: true
+2025-08-06 16:41:01: }
+2025-08-06 16:41:15: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 16:41:15: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:41:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:41:16: {
+2025-08-06 16:41:16:   whatsappReady: false,
+2025-08-06 16:41:16:   whatsappAuthenticated: false,
+2025-08-06 16:41:16:   hasQrCode: true,
+2025-08-06 16:41:16:   clientInitialized: true,
+2025-08-06 16:41:16:   socketConnected: true
+2025-08-06 16:41:16: }
+2025-08-06 16:41:23: Nouveau QR Code généré!
+2025-08-06 16:41:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:41:31: {
+2025-08-06 16:41:31:   whatsappReady: false,
+2025-08-06 16:41:31:   whatsappAuthenticated: false,
+2025-08-06 16:41:31:   hasQrCode: true,
+2025-08-06 16:41:31:   clientInitialized: true,
+2025-08-06 16:41:31:   socketConnected: true
+2025-08-06 16:41:31: }
+2025-08-06 16:41:35: ✅ Processus Chrome tués avec succès
+2025-08-06 16:41:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:41:46: {
+2025-08-06 16:41:46:   whatsappReady: false,
+2025-08-06 16:41:46:   whatsappAuthenticated: false,
+2025-08-06 16:41:46:   hasQrCode: true,
+2025-08-06 16:41:46:   clientInitialized: true,
+2025-08-06 16:41:46:   socketConnected: true
+2025-08-06 16:41:46: }
+2025-08-06 16:42:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:42:01: {
+2025-08-06 16:42:01:   whatsappReady: false,
+2025-08-06 16:42:01:   whatsappAuthenticated: false,
+2025-08-06 16:42:01:   hasQrCode: true,
+2025-08-06 16:42:01:   clientInitialized: true,
+2025-08-06 16:42:01:   socketConnected: true
+2025-08-06 16:42:01: }
+2025-08-06 16:42:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:42:16: {
+2025-08-06 16:42:16:   whatsappReady: false,
+2025-08-06 16:42:16:   whatsappAuthenticated: false,
+2025-08-06 16:42:16:   hasQrCode: true,
+2025-08-06 16:42:16:   clientInitialized: true,
+2025-08-06 16:42:16:   socketConnected: true
+2025-08-06 16:42:16: }
+2025-08-06 16:42:23: Nouveau QR Code généré!
+2025-08-06 16:42:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:42:31: {
+2025-08-06 16:42:31:   whatsappReady: false,
+2025-08-06 16:42:31:   whatsappAuthenticated: false,
+2025-08-06 16:42:31:   hasQrCode: true,
+2025-08-06 16:42:31:   clientInitialized: true,
+2025-08-06 16:42:31:   socketConnected: true
+2025-08-06 16:42:31: }
+2025-08-06 16:42:43: Nouveau QR Code généré!
+2025-08-06 16:42:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:42:46: {
+2025-08-06 16:42:46:   whatsappReady: false,
+2025-08-06 16:42:46:   whatsappAuthenticated: false,
+2025-08-06 16:42:46:   hasQrCode: true,
+2025-08-06 16:42:46:   clientInitialized: true,
+2025-08-06 16:42:46:   socketConnected: true
+2025-08-06 16:42:46: }
+2025-08-06 16:43:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:43:01: {
+2025-08-06 16:43:01:   whatsappReady: false,
+2025-08-06 16:43:01:   whatsappAuthenticated: false,
+2025-08-06 16:43:01:   hasQrCode: true,
+2025-08-06 16:43:01:   clientInitialized: true,
+2025-08-06 16:43:01:   socketConnected: true
+2025-08-06 16:43:01: }
+2025-08-06 16:43:03: Nouveau QR Code généré!
+2025-08-06 16:43:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:43:16: {
+2025-08-06 16:43:16:   whatsappReady: false,
+2025-08-06 16:43:16:   whatsappAuthenticated: false,
+2025-08-06 16:43:16:   hasQrCode: true,
+2025-08-06 16:43:16:   clientInitialized: true,
+2025-08-06 16:43:16:   socketConnected: true
+2025-08-06 16:43:16: }
+2025-08-06 16:43:23: Nouveau QR Code généré!
+2025-08-06 16:43:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:43:31: {
+2025-08-06 16:43:31:   whatsappReady: false,
+2025-08-06 16:43:31:   whatsappAuthenticated: false,
+2025-08-06 16:43:31:   hasQrCode: true,
+2025-08-06 16:43:31:   clientInitialized: true,
+2025-08-06 16:43:31:   socketConnected: true
+2025-08-06 16:43:31: }
+2025-08-06 16:43:43: Nouveau QR Code généré!
+2025-08-06 16:43:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:43:46: {
+2025-08-06 16:43:46:   whatsappReady: false,
+2025-08-06 16:43:46:   whatsappAuthenticated: false,
+2025-08-06 16:43:46:   hasQrCode: true,
+2025-08-06 16:43:46:   clientInitialized: true,
+2025-08-06 16:43:46:   socketConnected: true
+2025-08-06 16:43:46: }
+2025-08-06 16:44:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:44:01: {
+2025-08-06 16:44:01:   whatsappReady: false,
+2025-08-06 16:44:01:   whatsappAuthenticated: false,
+2025-08-06 16:44:01:   hasQrCode: true,
+2025-08-06 16:44:01:   clientInitialized: true,
+2025-08-06 16:44:01:   socketConnected: true
+2025-08-06 16:44:01: }
+2025-08-06 16:44:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:44:16: {
+2025-08-06 16:44:16:   whatsappReady: false,
+2025-08-06 16:44:16:   whatsappAuthenticated: false,
+2025-08-06 16:44:16:   hasQrCode: true,
+2025-08-06 16:44:16:   clientInitialized: true,
+2025-08-06 16:44:16:   socketConnected: true
+2025-08-06 16:44:16: }
+2025-08-06 16:44:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:44:31: {
+2025-08-06 16:44:31:   whatsappReady: false,
+2025-08-06 16:44:31:   whatsappAuthenticated: false,
+2025-08-06 16:44:31:   hasQrCode: true,
+2025-08-06 16:44:31:   clientInitialized: true,
+2025-08-06 16:44:31:   socketConnected: true
+2025-08-06 16:44:31: }
+2025-08-06 16:44:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:44:46: {
+2025-08-06 16:44:46:   whatsappReady: false,
+2025-08-06 16:44:46:   whatsappAuthenticated: false,
+2025-08-06 16:44:46:   hasQrCode: true,
+2025-08-06 16:44:46:   clientInitialized: true,
+2025-08-06 16:44:46:   socketConnected: true
+2025-08-06 16:44:46: }
+2025-08-06 16:44:55: Nouveau QR Code généré!
+2025-08-06 16:45:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:45:01: {
+2025-08-06 16:45:01:   whatsappReady: false,
+2025-08-06 16:45:01:   whatsappAuthenticated: false,
+2025-08-06 16:45:01:   hasQrCode: true,
+2025-08-06 16:45:01:   clientInitialized: true,
+2025-08-06 16:45:01:   socketConnected: true
+2025-08-06 16:45:01: }
+2025-08-06 16:45:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:45:16: {
+2025-08-06 16:45:16:   whatsappReady: false,
+2025-08-06 16:45:16:   whatsappAuthenticated: false,
+2025-08-06 16:45:16:   hasQrCode: true,
+2025-08-06 16:45:16:   clientInitialized: true,
+2025-08-06 16:45:16:   socketConnected: true
+2025-08-06 16:45:16: }
+2025-08-06 16:45:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:45:31: {
+2025-08-06 16:45:31:   whatsappReady: false,
+2025-08-06 16:45:31:   whatsappAuthenticated: false,
+2025-08-06 16:45:31:   hasQrCode: true,
+2025-08-06 16:45:31:   clientInitialized: true,
+2025-08-06 16:45:31:   socketConnected: true
+2025-08-06 16:45:31: }
+2025-08-06 16:45:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:45:46: {
+2025-08-06 16:45:46:   whatsappReady: false,
+2025-08-06 16:45:46:   whatsappAuthenticated: false,
+2025-08-06 16:45:46:   hasQrCode: true,
+2025-08-06 16:45:46:   clientInitialized: true,
+2025-08-06 16:45:46:   socketConnected: true
+2025-08-06 16:45:46: }
+2025-08-06 16:45:55: Nouveau QR Code généré!
+2025-08-06 16:46:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:46:01: {
+2025-08-06 16:46:01:   whatsappReady: false,
+2025-08-06 16:46:01:   whatsappAuthenticated: false,
+2025-08-06 16:46:01:   hasQrCode: true,
+2025-08-06 16:46:01:   clientInitialized: true,
+2025-08-06 16:46:01:   socketConnected: true
+2025-08-06 16:46:01: }
+2025-08-06 16:46:15: Nouveau QR Code généré!
+2025-08-06 16:46:15: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 16:46:15: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:46:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:46:16: {
+2025-08-06 16:46:16:   whatsappReady: false,
+2025-08-06 16:46:16:   whatsappAuthenticated: false,
+2025-08-06 16:46:16:   hasQrCode: true,
+2025-08-06 16:46:16:   clientInitialized: true,
+2025-08-06 16:46:16:   socketConnected: true
+2025-08-06 16:46:16: }
+2025-08-06 16:46:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:46:31: {
+2025-08-06 16:46:31:   whatsappReady: false,
+2025-08-06 16:46:31:   whatsappAuthenticated: false,
+2025-08-06 16:46:31:   hasQrCode: true,
+2025-08-06 16:46:31:   clientInitialized: true,
+2025-08-06 16:46:31:   socketConnected: true
+2025-08-06 16:46:31: }
+2025-08-06 16:46:35: Nouveau QR Code généré!
+2025-08-06 16:46:40: ✅ Processus Chrome tués avec succès
+2025-08-06 16:46:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:46:46: {
+2025-08-06 16:46:46:   whatsappReady: false,
+2025-08-06 16:46:46:   whatsappAuthenticated: false,
+2025-08-06 16:46:46:   hasQrCode: true,
+2025-08-06 16:46:46:   clientInitialized: true,
+2025-08-06 16:46:46:   socketConnected: true
+2025-08-06 16:46:46: }
+2025-08-06 16:46:55: Nouveau QR Code généré!
+2025-08-06 16:47:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:47:01: {
+2025-08-06 16:47:01:   whatsappReady: false,
+2025-08-06 16:47:01:   whatsappAuthenticated: false,
+2025-08-06 16:47:01:   hasQrCode: true,
+2025-08-06 16:47:01:   clientInitialized: true,
+2025-08-06 16:47:01:   socketConnected: true
+2025-08-06 16:47:01: }
+2025-08-06 16:47:15: Nouveau QR Code généré!
+2025-08-06 16:47:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:47:16: {
+2025-08-06 16:47:16:   whatsappReady: false,
+2025-08-06 16:47:16:   whatsappAuthenticated: false,
+2025-08-06 16:47:16:   hasQrCode: true,
+2025-08-06 16:47:16:   clientInitialized: true,
+2025-08-06 16:47:16:   socketConnected: true
+2025-08-06 16:47:16: }
+2025-08-06 16:47:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:47:31: {
+2025-08-06 16:47:31:   whatsappReady: false,
+2025-08-06 16:47:31:   whatsappAuthenticated: false,
+2025-08-06 16:47:31:   hasQrCode: true,
+2025-08-06 16:47:31:   clientInitialized: true,
+2025-08-06 16:47:31:   socketConnected: true
+2025-08-06 16:47:31: }
+2025-08-06 16:47:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:47:46: {
+2025-08-06 16:47:46:   whatsappReady: false,
+2025-08-06 16:47:46:   whatsappAuthenticated: false,
+2025-08-06 16:47:46:   hasQrCode: true,
+2025-08-06 16:47:46:   clientInitialized: true,
+2025-08-06 16:47:46:   socketConnected: true
+2025-08-06 16:47:46: }
+2025-08-06 16:48:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:48:01: {
+2025-08-06 16:48:01:   whatsappReady: false,
+2025-08-06 16:48:01:   whatsappAuthenticated: false,
+2025-08-06 16:48:01:   hasQrCode: true,
+2025-08-06 16:48:01:   clientInitialized: true,
+2025-08-06 16:48:01:   socketConnected: true
+2025-08-06 16:48:01: }
+2025-08-06 16:48:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:48:16: {
+2025-08-06 16:48:16:   whatsappReady: false,
+2025-08-06 16:48:16:   whatsappAuthenticated: false,
+2025-08-06 16:48:16:   hasQrCode: true,
+2025-08-06 16:48:16:   clientInitialized: true,
+2025-08-06 16:48:16:   socketConnected: true
+2025-08-06 16:48:16: }
+2025-08-06 16:48:25: Nouveau QR Code généré!
+2025-08-06 16:48:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:48:31: {
+2025-08-06 16:48:31:   whatsappReady: false,
+2025-08-06 16:48:31:   whatsappAuthenticated: false,
+2025-08-06 16:48:31:   hasQrCode: true,
+2025-08-06 16:48:31:   clientInitialized: true,
+2025-08-06 16:48:31:   socketConnected: true
+2025-08-06 16:48:31: }
+2025-08-06 16:48:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:48:46: {
+2025-08-06 16:48:46:   whatsappReady: false,
+2025-08-06 16:48:46:   whatsappAuthenticated: false,
+2025-08-06 16:48:46:   hasQrCode: true,
+2025-08-06 16:48:46:   clientInitialized: true,
+2025-08-06 16:48:46:   socketConnected: true
+2025-08-06 16:48:46: }
+2025-08-06 16:49:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:49:01: {
+2025-08-06 16:49:01:   whatsappReady: false,
+2025-08-06 16:49:01:   whatsappAuthenticated: false,
+2025-08-06 16:49:01:   hasQrCode: true,
+2025-08-06 16:49:01:   clientInitialized: true,
+2025-08-06 16:49:01:   socketConnected: true
+2025-08-06 16:49:01: }
+2025-08-06 16:49:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:49:16: {
+2025-08-06 16:49:16:   whatsappReady: false,
+2025-08-06 16:49:16:   whatsappAuthenticated: false,
+2025-08-06 16:49:16:   hasQrCode: true,
+2025-08-06 16:49:16:   clientInitialized: true,
+2025-08-06 16:49:16:   socketConnected: true
+2025-08-06 16:49:16: }
+2025-08-06 16:49:25: Nouveau QR Code généré!
+2025-08-06 16:49:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:49:31: {
+2025-08-06 16:49:31:   whatsappReady: false,
+2025-08-06 16:49:31:   whatsappAuthenticated: false,
+2025-08-06 16:49:31:   hasQrCode: true,
+2025-08-06 16:49:31:   clientInitialized: true,
+2025-08-06 16:49:31:   socketConnected: true
+2025-08-06 16:49:31: }
+2025-08-06 16:49:45: Nouveau QR Code généré!
+2025-08-06 16:49:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:49:46: {
+2025-08-06 16:49:46:   whatsappReady: false,
+2025-08-06 16:49:46:   whatsappAuthenticated: false,
+2025-08-06 16:49:46:   hasQrCode: true,
+2025-08-06 16:49:46:   clientInitialized: true,
+2025-08-06 16:49:46:   socketConnected: true
+2025-08-06 16:49:46: }
+2025-08-06 16:50:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:50:01: {
+2025-08-06 16:50:01:   whatsappReady: false,
+2025-08-06 16:50:01:   whatsappAuthenticated: false,
+2025-08-06 16:50:01:   hasQrCode: true,
+2025-08-06 16:50:01:   clientInitialized: true,
+2025-08-06 16:50:01:   socketConnected: true
+2025-08-06 16:50:01: }
+2025-08-06 16:50:05: Nouveau QR Code généré!
+2025-08-06 16:50:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:50:16: {
+2025-08-06 16:50:16:   whatsappReady: false,
+2025-08-06 16:50:16:   whatsappAuthenticated: false,
+2025-08-06 16:50:16:   hasQrCode: true,
+2025-08-06 16:50:16:   clientInitialized: true,
+2025-08-06 16:50:16:   socketConnected: true
+2025-08-06 16:50:16: }
+2025-08-06 16:50:25: Nouveau QR Code généré!
+2025-08-06 16:50:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:50:31: {
+2025-08-06 16:50:31:   whatsappReady: false,
+2025-08-06 16:50:31:   whatsappAuthenticated: false,
+2025-08-06 16:50:31:   hasQrCode: true,
+2025-08-06 16:50:31:   clientInitialized: true,
+2025-08-06 16:50:31:   socketConnected: true
+2025-08-06 16:50:31: }
+2025-08-06 16:50:45: Nouveau QR Code généré!
+2025-08-06 16:50:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:50:46: {
+2025-08-06 16:50:46:   whatsappReady: false,
+2025-08-06 16:50:46:   whatsappAuthenticated: false,
+2025-08-06 16:50:46:   hasQrCode: true,
+2025-08-06 16:50:46:   clientInitialized: true,
+2025-08-06 16:50:46:   socketConnected: true
+2025-08-06 16:50:46: }
+2025-08-06 16:51:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:51:01: {
+2025-08-06 16:51:01:   whatsappReady: false,
+2025-08-06 16:51:01:   whatsappAuthenticated: false,
+2025-08-06 16:51:01:   hasQrCode: true,
+2025-08-06 16:51:01:   clientInitialized: true,
+2025-08-06 16:51:01:   socketConnected: true
+2025-08-06 16:51:01: }
+2025-08-06 16:51:16: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 16:51:16: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:51:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:51:16: {
+2025-08-06 16:51:16:   whatsappReady: false,
+2025-08-06 16:51:16:   whatsappAuthenticated: false,
+2025-08-06 16:51:16:   hasQrCode: true,
+2025-08-06 16:51:16:   clientInitialized: true,
+2025-08-06 16:51:16:   socketConnected: true
+2025-08-06 16:51:16: }
+2025-08-06 16:51:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:51:31: {
+2025-08-06 16:51:31:   whatsappReady: false,
+2025-08-06 16:51:31:   whatsappAuthenticated: false,
+2025-08-06 16:51:31:   hasQrCode: true,
+2025-08-06 16:51:31:   clientInitialized: true,
+2025-08-06 16:51:31:   socketConnected: true
+2025-08-06 16:51:31: }
+2025-08-06 16:51:40: ✅ Processus Chrome tués avec succès
+2025-08-06 16:51:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:51:46: {
+2025-08-06 16:51:46:   whatsappReady: false,
+2025-08-06 16:51:46:   whatsappAuthenticated: false,
+2025-08-06 16:51:46:   hasQrCode: true,
+2025-08-06 16:51:46:   clientInitialized: true,
+2025-08-06 16:51:46:   socketConnected: true
+2025-08-06 16:51:46: }
+2025-08-06 16:51:56: Nouveau QR Code généré!
+2025-08-06 16:52:01: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:52:01: {
+2025-08-06 16:52:01:   whatsappReady: false,
+2025-08-06 16:52:01:   whatsappAuthenticated: false,
+2025-08-06 16:52:01:   hasQrCode: true,
+2025-08-06 16:52:01:   clientInitialized: true,
+2025-08-06 16:52:01:   socketConnected: true
+2025-08-06 16:52:01: }
+2025-08-06 16:52:16: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:52:16: {
+2025-08-06 16:52:16:   whatsappReady: false,
+2025-08-06 16:52:16:   whatsappAuthenticated: false,
+2025-08-06 16:52:16:   hasQrCode: true,
+2025-08-06 16:52:16:   clientInitialized: true,
+2025-08-06 16:52:16:   socketConnected: true
+2025-08-06 16:52:16: }
+2025-08-06 16:52:31: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:52:31: {
+2025-08-06 16:52:31:   whatsappReady: false,
+2025-08-06 16:52:31:   whatsappAuthenticated: false,
+2025-08-06 16:52:31:   hasQrCode: true,
+2025-08-06 16:52:31:   clientInitialized: true,
+2025-08-06 16:52:31:   socketConnected: true
+2025-08-06 16:52:31: }
+2025-08-06 16:52:46: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:52:46: {
+2025-08-06 16:52:46:   whatsappReady: false,
+2025-08-06 16:52:46:   whatsappAuthenticated: false,
+2025-08-06 16:52:46:   hasQrCode: true,
+2025-08-06 16:52:46:   clientInitialized: true,
+2025-08-06 16:52:46:   socketConnected: true
+2025-08-06 16:52:46: }
+2025-08-06 16:52:56: Nouveau QR Code généré!
+2025-08-06 16:53:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:53:02: {
+2025-08-06 16:53:02:   whatsappReady: false,
+2025-08-06 16:53:02:   whatsappAuthenticated: false,
+2025-08-06 16:53:02:   hasQrCode: true,
+2025-08-06 16:53:02:   clientInitialized: true,
+2025-08-06 16:53:02:   socketConnected: true
+2025-08-06 16:53:02: }
+2025-08-06 16:53:16: Nouveau QR Code généré!
+2025-08-06 16:53:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:53:17: {
+2025-08-06 16:53:17:   whatsappReady: false,
+2025-08-06 16:53:17:   whatsappAuthenticated: false,
+2025-08-06 16:53:17:   hasQrCode: true,
+2025-08-06 16:53:17:   clientInitialized: true,
+2025-08-06 16:53:17:   socketConnected: true
+2025-08-06 16:53:17: }
+2025-08-06 16:53:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:53:32: {
+2025-08-06 16:53:32:   whatsappReady: false,
+2025-08-06 16:53:32:   whatsappAuthenticated: false,
+2025-08-06 16:53:32:   hasQrCode: true,
+2025-08-06 16:53:32:   clientInitialized: true,
+2025-08-06 16:53:32:   socketConnected: true
+2025-08-06 16:53:32: }
+2025-08-06 16:53:36: Nouveau QR Code généré!
+2025-08-06 16:53:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:53:47: {
+2025-08-06 16:53:47:   whatsappReady: false,
+2025-08-06 16:53:47:   whatsappAuthenticated: false,
+2025-08-06 16:53:47:   hasQrCode: true,
+2025-08-06 16:53:47:   clientInitialized: true,
+2025-08-06 16:53:47:   socketConnected: true
+2025-08-06 16:53:47: }
+2025-08-06 16:53:56: Nouveau QR Code généré!
+2025-08-06 16:54:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:54:02: {
+2025-08-06 16:54:02:   whatsappReady: false,
+2025-08-06 16:54:02:   whatsappAuthenticated: false,
+2025-08-06 16:54:02:   hasQrCode: true,
+2025-08-06 16:54:02:   clientInitialized: true,
+2025-08-06 16:54:02:   socketConnected: true
+2025-08-06 16:54:02: }
+2025-08-06 16:54:16: Nouveau QR Code généré!
+2025-08-06 16:54:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:54:17: {
+2025-08-06 16:54:17:   whatsappReady: false,
+2025-08-06 16:54:17:   whatsappAuthenticated: false,
+2025-08-06 16:54:17:   hasQrCode: true,
+2025-08-06 16:54:17:   clientInitialized: true,
+2025-08-06 16:54:17:   socketConnected: true
+2025-08-06 16:54:17: }
+2025-08-06 16:54:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:54:32: {
+2025-08-06 16:54:32:   whatsappReady: false,
+2025-08-06 16:54:32:   whatsappAuthenticated: false,
+2025-08-06 16:54:32:   hasQrCode: true,
+2025-08-06 16:54:32:   clientInitialized: true,
+2025-08-06 16:54:32:   socketConnected: true
+2025-08-06 16:54:32: }
+2025-08-06 16:54:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:54:47: {
+2025-08-06 16:54:47:   whatsappReady: false,
+2025-08-06 16:54:47:   whatsappAuthenticated: false,
+2025-08-06 16:54:47:   hasQrCode: true,
+2025-08-06 16:54:47:   clientInitialized: true,
+2025-08-06 16:54:47:   socketConnected: true
+2025-08-06 16:54:47: }
+2025-08-06 16:55:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:55:02: {
+2025-08-06 16:55:02:   whatsappReady: false,
+2025-08-06 16:55:02:   whatsappAuthenticated: false,
+2025-08-06 16:55:02:   hasQrCode: true,
+2025-08-06 16:55:02:   clientInitialized: true,
+2025-08-06 16:55:02:   socketConnected: true
+2025-08-06 16:55:02: }
+2025-08-06 16:55:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:55:17: {
+2025-08-06 16:55:17:   whatsappReady: false,
+2025-08-06 16:55:17:   whatsappAuthenticated: false,
+2025-08-06 16:55:17:   hasQrCode: true,
+2025-08-06 16:55:17:   clientInitialized: true,
+2025-08-06 16:55:17:   socketConnected: true
+2025-08-06 16:55:17: }
+2025-08-06 16:55:28: Nouveau QR Code généré!
+2025-08-06 16:55:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:55:32: {
+2025-08-06 16:55:32:   whatsappReady: false,
+2025-08-06 16:55:32:   whatsappAuthenticated: false,
+2025-08-06 16:55:32:   hasQrCode: true,
+2025-08-06 16:55:32:   clientInitialized: true,
+2025-08-06 16:55:32:   socketConnected: true
+2025-08-06 16:55:32: }
+2025-08-06 16:55:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:55:47: {
+2025-08-06 16:55:47:   whatsappReady: false,
+2025-08-06 16:55:47:   whatsappAuthenticated: false,
+2025-08-06 16:55:47:   hasQrCode: true,
+2025-08-06 16:55:47:   clientInitialized: true,
+2025-08-06 16:55:47:   socketConnected: true
+2025-08-06 16:55:47: }
+2025-08-06 16:56:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:56:02: {
+2025-08-06 16:56:02:   whatsappReady: false,
+2025-08-06 16:56:02:   whatsappAuthenticated: false,
+2025-08-06 16:56:02:   hasQrCode: true,
+2025-08-06 16:56:02:   clientInitialized: true,
+2025-08-06 16:56:02:   socketConnected: true
+2025-08-06 16:56:02: }
+2025-08-06 16:56:16: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 16:56:16: 🔄 Nettoyage des processus Chrome...
+2025-08-06 16:56:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:56:17: {
+2025-08-06 16:56:17:   whatsappReady: false,
+2025-08-06 16:56:17:   whatsappAuthenticated: false,
+2025-08-06 16:56:17:   hasQrCode: true,
+2025-08-06 16:56:17:   clientInitialized: true,
+2025-08-06 16:56:17:   socketConnected: true
+2025-08-06 16:56:17: }
+2025-08-06 16:56:28: Nouveau QR Code généré!
+2025-08-06 16:56:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:56:32: {
+2025-08-06 16:56:32:   whatsappReady: false,
+2025-08-06 16:56:32:   whatsappAuthenticated: false,
+2025-08-06 16:56:32:   hasQrCode: true,
+2025-08-06 16:56:32:   clientInitialized: true,
+2025-08-06 16:56:32:   socketConnected: true
+2025-08-06 16:56:32: }
+2025-08-06 16:56:39: ✅ Processus Chrome tués avec succès
+2025-08-06 16:56:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:56:47: {
+2025-08-06 16:56:47:   whatsappReady: false,
+2025-08-06 16:56:47:   whatsappAuthenticated: false,
+2025-08-06 16:56:47:   hasQrCode: true,
+2025-08-06 16:56:47:   clientInitialized: true,
+2025-08-06 16:56:47:   socketConnected: true
+2025-08-06 16:56:47: }
+2025-08-06 16:56:48: Nouveau QR Code généré!
+2025-08-06 16:57:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:57:02: {
+2025-08-06 16:57:02:   whatsappReady: false,
+2025-08-06 16:57:02:   whatsappAuthenticated: false,
+2025-08-06 16:57:02:   hasQrCode: true,
+2025-08-06 16:57:02:   clientInitialized: true,
+2025-08-06 16:57:02:   socketConnected: true
+2025-08-06 16:57:02: }
+2025-08-06 16:57:08: Nouveau QR Code généré!
+2025-08-06 16:57:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:57:17: {
+2025-08-06 16:57:17:   whatsappReady: false,
+2025-08-06 16:57:17:   whatsappAuthenticated: false,
+2025-08-06 16:57:17:   hasQrCode: true,
+2025-08-06 16:57:17:   clientInitialized: true,
+2025-08-06 16:57:17:   socketConnected: true
+2025-08-06 16:57:17: }
+2025-08-06 16:57:28: Nouveau QR Code généré!
+2025-08-06 16:57:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:57:32: {
+2025-08-06 16:57:32:   whatsappReady: false,
+2025-08-06 16:57:32:   whatsappAuthenticated: false,
+2025-08-06 16:57:32:   hasQrCode: true,
+2025-08-06 16:57:32:   clientInitialized: true,
+2025-08-06 16:57:32:   socketConnected: true
+2025-08-06 16:57:32: }
+2025-08-06 16:57:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:57:47: {
+2025-08-06 16:57:47:   whatsappReady: false,
+2025-08-06 16:57:47:   whatsappAuthenticated: false,
+2025-08-06 16:57:47:   hasQrCode: true,
+2025-08-06 16:57:47:   clientInitialized: true,
+2025-08-06 16:57:47:   socketConnected: true
+2025-08-06 16:57:47: }
+2025-08-06 16:57:48: Nouveau QR Code généré!
+2025-08-06 16:58:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:58:02: {
+2025-08-06 16:58:02:   whatsappReady: false,
+2025-08-06 16:58:02:   whatsappAuthenticated: false,
+2025-08-06 16:58:02:   hasQrCode: true,
+2025-08-06 16:58:02:   clientInitialized: true,
+2025-08-06 16:58:02:   socketConnected: true
+2025-08-06 16:58:02: }
+2025-08-06 16:58:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:58:17: {
+2025-08-06 16:58:17:   whatsappReady: false,
+2025-08-06 16:58:17:   whatsappAuthenticated: false,
+2025-08-06 16:58:17:   hasQrCode: true,
+2025-08-06 16:58:17:   clientInitialized: true,
+2025-08-06 16:58:17:   socketConnected: true
+2025-08-06 16:58:17: }
+2025-08-06 16:58:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:58:32: {
+2025-08-06 16:58:32:   whatsappReady: false,
+2025-08-06 16:58:32:   whatsappAuthenticated: false,
+2025-08-06 16:58:32:   hasQrCode: true,
+2025-08-06 16:58:32:   clientInitialized: true,
+2025-08-06 16:58:32:   socketConnected: true
+2025-08-06 16:58:32: }
+2025-08-06 16:58:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:58:47: {
+2025-08-06 16:58:47:   whatsappReady: false,
+2025-08-06 16:58:47:   whatsappAuthenticated: false,
+2025-08-06 16:58:47:   hasQrCode: true,
+2025-08-06 16:58:47:   clientInitialized: true,
+2025-08-06 16:58:47:   socketConnected: true
+2025-08-06 16:58:47: }
+2025-08-06 16:58:58: Nouveau QR Code généré!
+2025-08-06 16:59:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:59:02: {
+2025-08-06 16:59:02:   whatsappReady: false,
+2025-08-06 16:59:02:   whatsappAuthenticated: false,
+2025-08-06 16:59:02:   hasQrCode: true,
+2025-08-06 16:59:02:   clientInitialized: true,
+2025-08-06 16:59:02:   socketConnected: true
+2025-08-06 16:59:02: }
+2025-08-06 16:59:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:59:17: {
+2025-08-06 16:59:17:   whatsappReady: false,
+2025-08-06 16:59:17:   whatsappAuthenticated: false,
+2025-08-06 16:59:17:   hasQrCode: true,
+2025-08-06 16:59:17:   clientInitialized: true,
+2025-08-06 16:59:17:   socketConnected: true
+2025-08-06 16:59:17: }
+2025-08-06 16:59:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:59:32: {
+2025-08-06 16:59:32:   whatsappReady: false,
+2025-08-06 16:59:32:   whatsappAuthenticated: false,
+2025-08-06 16:59:32:   hasQrCode: true,
+2025-08-06 16:59:32:   clientInitialized: true,
+2025-08-06 16:59:32:   socketConnected: true
+2025-08-06 16:59:32: }
+2025-08-06 16:59:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 16:59:47: {
+2025-08-06 16:59:47:   whatsappReady: false,
+2025-08-06 16:59:47:   whatsappAuthenticated: false,
+2025-08-06 16:59:47:   hasQrCode: true,
+2025-08-06 16:59:47:   clientInitialized: true,
+2025-08-06 16:59:47:   socketConnected: true
+2025-08-06 16:59:47: }
+2025-08-06 16:59:58: Nouveau QR Code généré!
+2025-08-06 17:00:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:00:02: {
+2025-08-06 17:00:02:   whatsappReady: false,
+2025-08-06 17:00:02:   whatsappAuthenticated: false,
+2025-08-06 17:00:02:   hasQrCode: true,
+2025-08-06 17:00:02:   clientInitialized: true,
+2025-08-06 17:00:02:   socketConnected: true
+2025-08-06 17:00:02: }
+2025-08-06 17:00:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:00:17: {
+2025-08-06 17:00:17:   whatsappReady: false,
+2025-08-06 17:00:17:   whatsappAuthenticated: false,
+2025-08-06 17:00:17:   hasQrCode: true,
+2025-08-06 17:00:17:   clientInitialized: true,
+2025-08-06 17:00:17:   socketConnected: true
+2025-08-06 17:00:17: }
+2025-08-06 17:00:18: Nouveau QR Code généré!
+2025-08-06 17:00:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:00:32: {
+2025-08-06 17:00:32:   whatsappReady: false,
+2025-08-06 17:00:32:   whatsappAuthenticated: false,
+2025-08-06 17:00:32:   hasQrCode: true,
+2025-08-06 17:00:32:   clientInitialized: true,
+2025-08-06 17:00:32:   socketConnected: true
+2025-08-06 17:00:32: }
+2025-08-06 17:00:38: Nouveau QR Code généré!
+2025-08-06 17:00:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:00:47: {
+2025-08-06 17:00:47:   whatsappReady: false,
+2025-08-06 17:00:47:   whatsappAuthenticated: false,
+2025-08-06 17:00:47:   hasQrCode: true,
+2025-08-06 17:00:47:   clientInitialized: true,
+2025-08-06 17:00:47:   socketConnected: true
+2025-08-06 17:00:47: }
+2025-08-06 17:00:58: Nouveau QR Code généré!
+2025-08-06 17:01:02: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:01:02: {
+2025-08-06 17:01:02:   whatsappReady: false,
+2025-08-06 17:01:02:   whatsappAuthenticated: false,
+2025-08-06 17:01:02:   hasQrCode: true,
+2025-08-06 17:01:02:   clientInitialized: true,
+2025-08-06 17:01:02:   socketConnected: true
+2025-08-06 17:01:02: }
+2025-08-06 17:01:16: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 17:01:16: 🔄 Nettoyage des processus Chrome...
+2025-08-06 17:01:17: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:01:17: {
+2025-08-06 17:01:17:   whatsappReady: false,
+2025-08-06 17:01:17:   whatsappAuthenticated: false,
+2025-08-06 17:01:17:   hasQrCode: true,
+2025-08-06 17:01:17:   clientInitialized: true,
+2025-08-06 17:01:17:   socketConnected: true
+2025-08-06 17:01:17: }
+2025-08-06 17:01:18: Nouveau QR Code généré!
+2025-08-06 17:01:32: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:01:32: {
+2025-08-06 17:01:32:   whatsappReady: false,
+2025-08-06 17:01:32:   whatsappAuthenticated: false,
+2025-08-06 17:01:32:   hasQrCode: true,
+2025-08-06 17:01:32:   clientInitialized: true,
+2025-08-06 17:01:32:   socketConnected: true
+2025-08-06 17:01:32: }
+2025-08-06 17:01:35: ✅ Processus Chrome tués avec succès
+2025-08-06 17:01:47: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:01:47: {
+2025-08-06 17:01:47:   whatsappReady: false,
+2025-08-06 17:01:47:   whatsappAuthenticated: false,
+2025-08-06 17:01:47:   hasQrCode: true,
+2025-08-06 17:01:47:   clientInitialized: true,
+2025-08-06 17:01:47:   socketConnected: true
+2025-08-06 17:01:47: }
+2025-08-06 17:02:18: 🔍 Vérification de l'état du serveur...
+2025-08-06 17:02:18: {
+2025-08-06 17:02:18:   whatsappReady: false,
+2025-08-06 17:02:18:   whatsappAuthenticated: false,
+2025-08-06 17:02:18:   hasQrCode: true,
+2025-08-06 17:02:18:   clientInitialized: true,
+2025-08-06 17:02:18:   socketConnected: true
+2025-08-06 17:02:18: }
+2025-08-06 18:01:48: 🔍 Vérification de l'état du serveur...
+2025-08-06 18:01:48: {
+2025-08-06 18:01:48:   whatsappReady: false,
+2025-08-06 18:01:48:   whatsappAuthenticated: false,
+2025-08-06 18:01:48:   hasQrCode: true,
+2025-08-06 18:01:48:   clientInitialized: true,
+2025-08-06 18:01:48:   socketConnected: true
+2025-08-06 18:01:48: }
+2025-08-06 18:01:48: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 18:01:48: 🔄 Nettoyage des processus Chrome...
+2025-08-06 19:07:41: 🔍 Vérification de l'état du serveur...
+2025-08-06 19:07:41: {
+2025-08-06 19:07:41:   whatsappReady: false,
+2025-08-06 19:07:41:   whatsappAuthenticated: false,
+2025-08-06 19:07:41:   hasQrCode: true,
+2025-08-06 19:07:41:   clientInitialized: true,
+2025-08-06 19:07:41:   socketConnected: true
+2025-08-06 19:07:41: }
+2025-08-06 19:07:41: 🔍 Vérification des processus Chrome orphelins...
+2025-08-06 19:07:41: 🔄 Nettoyage des processus Chrome...
+2025-08-06 19:07:55: 🔍 Vérification de l'état du serveur...
+2025-08-06 19:07:55: {
+2025-08-06 19:07:55:   whatsappReady: false,
+2025-08-06 19:07:55:   whatsappAuthenticated: false,
+2025-08-06 19:07:55:   hasQrCode: true,
+2025-08-06 19:07:55:   clientInitialized: true,
+2025-08-06 19:07:55:   socketConnected: true
+2025-08-06 19:07:55: }
+2025-08-06 19:07:58: ✅ Processus Chrome tués avec succès
+2025-08-06 19:08:10: 🔍 Vérification de l'état du serveur...
+2025-08-06 19:08:10: {
+2025-08-06 19:08:10:   whatsappReady: false,
+2025-08-06 19:08:10:   whatsappAuthenticated: false,
+2025-08-06 19:08:10:   hasQrCode: true,
+2025-08-06 19:08:10:   clientInitialized: true,
+2025-08-06 19:08:10:   socketConnected: true
+2025-08-06 19:08:10: }
+2025-08-06 19:08:17: ✅ Processus Chrome tués avec succès
+2025-08-06 19:08:25: 🔍 Vérification de l'état du serveur...
+2025-08-06 19:08:25: {
+2025-08-06 19:08:25:   whatsappReady: false,
+2025-08-06 19:08:25:   whatsappAuthenticated: false,
+2025-08-06 19:08:25:   hasQrCode: true,
+2025-08-06 19:08:25:   clientInitialized: true,
+2025-08-06 19:08:25:   socketConnected: true
+2025-08-06 19:08:25: }
+2025-08-06 19:08:40: 🔍 Vérification de l'état du serveur...
+2025-08-06 19:08:40: {
+2025-08-06 19:08:40:   whatsappReady: false,
+2025-08-06 19:08:40:   whatsappAuthenticated: false,
+2025-08-06 19:08:40:   hasQrCode: true,
+2025-08-06 19:08:40:   clientInitialized: true,
+2025-08-06 19:08:40:   socketConnected: true
+2025-08-06 19:08:40: }
+2025-08-06 19:08:55: 🔍 Vérification de l'état du serveur...
+2025-08-06 19:08:55: {
+2025-08-06 19:08:55:   whatsappReady: false,
+2025-08-06 19:08:55:   whatsappAuthenticated: false,
+2025-08-06 19:08:55:   hasQrCode: true,
+2025-08-06 19:08:55:   clientInitialized: true,
+2025-08-06 19:08:55:   socketConnected: true
+2025-08-06 19:08:55: }

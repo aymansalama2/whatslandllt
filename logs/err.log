@@ -1,57 +1,67 @@
-2025-08-04 10:40:38: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
-2025-08-04 10:40:38: 
-2025-08-04 10:40:38: 
-2025-08-04 10:40:38: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
-2025-08-04 10:40:38: 
-2025-08-04 10:40:38:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
-2025-08-04 10:40:38:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
-2025-08-04 10:40:38:     at ChildProcess.emit (node:events:518:28)
-2025-08-04 10:40:38:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
-2025-08-04 10:40:38:     at onErrorNT (node:internal/child_process:483:16)
-2025-08-04 10:40:38:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
-2025-08-04 10:40:38: ❌ Promesse rejetée non gérée: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
-2025-08-04 10:40:38: 
-2025-08-04 10:40:38: 
-2025-08-04 10:40:38: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
-2025-08-04 10:40:38: 
-2025-08-04 10:40:38:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
-2025-08-04 10:40:38:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
-2025-08-04 10:40:38:     at ChildProcess.emit (node:events:518:28)
-2025-08-04 10:40:38:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
-2025-08-04 10:40:38:     at onErrorNT (node:internal/child_process:483:16)
-2025-08-04 10:40:38:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
-2025-08-04 10:40:38: Promesse: Promise {
-2025-08-04 10:40:38:   <rejected> Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
-2025-08-04 10:40:38:   
-2025-08-04 10:40:38:   
-2025-08-04 10:40:38:   TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
-2025-08-04 10:40:38:   
-2025-08-04 10:40:38:       at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
-2025-08-04 10:40:38:       at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
-2025-08-04 10:40:38:       at ChildProcess.emit (node:events:518:28)
-2025-08-04 10:40:38:       at ChildProcess._handle.onexit (node:internal/child_process:291:12)
-2025-08-04 10:40:38:       at onErrorNT (node:internal/child_process:483:16)
-2025-08-04 10:40:38:       at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
-2025-08-04 10:40:38: }
-2025-08-04 10:40:47: Erreur lors de la réinitialisation complète: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
-2025-08-04 10:40:47: 
-2025-08-04 10:40:47: 
-2025-08-04 10:40:47: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
-2025-08-04 10:40:47: 
-2025-08-04 10:40:47:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
-2025-08-04 10:40:47:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
-2025-08-04 10:40:47:     at ChildProcess.emit (node:events:518:28)
-2025-08-04 10:40:47:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
-2025-08-04 10:40:47:     at onErrorNT (node:internal/child_process:483:16)
-2025-08-04 10:40:47:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
-2025-08-04 10:40:58: Erreur lors de la réinitialisation complète: Error: Failed to launch the browser process! spawn /opt/google/chrome/google-chrome ENOENT
-2025-08-04 10:40:58: 
-2025-08-04 10:40:58: 
-2025-08-04 10:40:58: TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
-2025-08-04 10:40:58: 
-2025-08-04 10:40:58:     at onClose (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:299:20)
-2025-08-04 10:40:58:     at ChildProcess.<anonymous> (C:\test1\whatslandllt\backend\node_modules\whatsapp-web.js\node_modules\puppeteer-core\lib\cjs\puppeteer\node\BrowserRunner.js:293:24)
-2025-08-04 10:40:58:     at ChildProcess.emit (node:events:518:28)
-2025-08-04 10:40:58:     at ChildProcess._handle.onexit (node:internal/child_process:291:12)
-2025-08-04 10:40:58:     at onErrorNT (node:internal/child_process:483:16)
-2025-08-04 10:40:58:     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+2025-08-06 16:21:15: ValidationError: Custom keyGenerator appears to use request IP without calling the ipKeyGenerator helper function for IPv6 addresses. This could allow IPv6 users to bypass limits. See https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/ for more information.
+2025-08-06 16:21:15:     at Object.keyGeneratorIpFallback (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:578:13)
+2025-08-06 16:21:15:     at wrappedValidations.<computed> [as keyGeneratorIpFallback] (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:606:22)
+2025-08-06 16:21:15:     at parseOptions (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:675:16)
+2025-08-06 16:21:15:     at rateLimit (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:753:18)
+2025-08-06 16:21:15:     at Object.<anonymous> (C:\test1\whatslandllt\backend\server.js:276:20)
+2025-08-06 16:21:15:     at Module._compile (node:internal/modules/cjs/loader:1730:14)
+2025-08-06 16:21:15:     at Object..js (node:internal/modules/cjs/loader:1895:10)
+2025-08-06 16:21:15:     at Module.load (node:internal/modules/cjs/loader:1465:32)
+2025-08-06 16:21:15:     at Function._load (node:internal/modules/cjs/loader:1282:12)
+2025-08-06 16:21:15:     at Object.<anonymous> (C:\Users\salam\AppData\Roaming\npm\node_modules\pm2\lib\ProcessContainerFork.js:33:23)
+2025-08-06 16:21:15:     at Module._compile (node:internal/modules/cjs/loader:1730:14)
+2025-08-06 16:21:15:     at Object..js (node:internal/modules/cjs/loader:1895:10)
+2025-08-06 16:21:15:     at Module.load (node:internal/modules/cjs/loader:1465:32)
+2025-08-06 16:21:15:     at Function._load (node:internal/modules/cjs/loader:1282:12)
+2025-08-06 16:21:15:     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+2025-08-06 16:21:15:     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24) {
+2025-08-06 16:21:15:   code: 'ERR_ERL_KEY_GEN_IPV6',
+2025-08-06 16:21:15:   help: 'https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/'
+2025-08-06 16:21:15: }
+2025-08-06 16:21:15: ValidationError: Custom keyGenerator appears to use request IP without calling the ipKeyGenerator helper function for IPv6 addresses. This could allow IPv6 users to bypass limits. See https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/ for more information.
+2025-08-06 16:21:15:     at Object.keyGeneratorIpFallback (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:578:13)
+2025-08-06 16:21:15:     at wrappedValidations.<computed> [as keyGeneratorIpFallback] (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:606:22)
+2025-08-06 16:21:15:     at parseOptions (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:675:16)
+2025-08-06 16:21:15:     at rateLimit (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:753:18)
+2025-08-06 16:21:15:     at Object.<anonymous> (C:\test1\whatslandllt\backend\server.js:294:25)
+2025-08-06 16:21:15:     at Module._compile (node:internal/modules/cjs/loader:1730:14)
+2025-08-06 16:21:15:     at Object..js (node:internal/modules/cjs/loader:1895:10)
+2025-08-06 16:21:15:     at Module.load (node:internal/modules/cjs/loader:1465:32)
+2025-08-06 16:21:15:     at Function._load (node:internal/modules/cjs/loader:1282:12)
+2025-08-06 16:21:15:     at Object.<anonymous> (C:\Users\salam\AppData\Roaming\npm\node_modules\pm2\lib\ProcessContainerFork.js:33:23)
+2025-08-06 16:21:15:     at Module._compile (node:internal/modules/cjs/loader:1730:14)
+2025-08-06 16:21:15:     at Object..js (node:internal/modules/cjs/loader:1895:10)
+2025-08-06 16:21:15:     at Module.load (node:internal/modules/cjs/loader:1465:32)
+2025-08-06 16:21:15:     at Function._load (node:internal/modules/cjs/loader:1282:12)
+2025-08-06 16:21:15:     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+2025-08-06 16:21:15:     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24) {
+2025-08-06 16:21:15:   code: 'ERR_ERL_KEY_GEN_IPV6',
+2025-08-06 16:21:15:   help: 'https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/'
+2025-08-06 16:21:15: }
+2025-08-06 16:21:15: ValidationError: Custom keyGenerator appears to use request IP without calling the ipKeyGenerator helper function for IPv6 addresses. This could allow IPv6 users to bypass limits. See https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/ for more information.
+2025-08-06 16:21:15:     at Object.keyGeneratorIpFallback (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:578:13)
+2025-08-06 16:21:15:     at wrappedValidations.<computed> [as keyGeneratorIpFallback] (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:606:22)
+2025-08-06 16:21:15:     at parseOptions (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:675:16)
+2025-08-06 16:21:15:     at rateLimit (C:\test1\whatslandllt\backend\node_modules\express-rate-limit\dist\index.cjs:753:18)
+2025-08-06 16:21:15:     at Object.<anonymous> (C:\test1\whatslandllt\backend\server.js:309:23)
+2025-08-06 16:21:15:     at Module._compile (node:internal/modules/cjs/loader:1730:14)
+2025-08-06 16:21:15:     at Object..js (node:internal/modules/cjs/loader:1895:10)
+2025-08-06 16:21:15:     at Module.load (node:internal/modules/cjs/loader:1465:32)
+2025-08-06 16:21:15:     at Function._load (node:internal/modules/cjs/loader:1282:12)
+2025-08-06 16:21:15:     at Object.<anonymous> (C:\Users\salam\AppData\Roaming\npm\node_modules\pm2\lib\ProcessContainerFork.js:33:23)
+2025-08-06 16:21:15:     at Module._compile (node:internal/modules/cjs/loader:1730:14)
+2025-08-06 16:21:15:     at Object..js (node:internal/modules/cjs/loader:1895:10)
+2025-08-06 16:21:15:     at Module.load (node:internal/modules/cjs/loader:1465:32)
+2025-08-06 16:21:15:     at Function._load (node:internal/modules/cjs/loader:1282:12)
+2025-08-06 16:21:15:     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+2025-08-06 16:21:15:     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24) {
+2025-08-06 16:21:15:   code: 'ERR_ERL_KEY_GEN_IPV6',
+2025-08-06 16:21:15:   help: 'https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/'
+2025-08-06 16:21:15: }
+2025-08-06 16:21:17: Erreur lors de la synchronisation de la base de données: Validation error
+2025-08-06 16:21:18: [2025-08-06T15:21:18.115Z]  @firebase/database: FIREBASE WARNING: set at /test failed: permission_denied 
+2025-08-06 18:01:49: [2025-08-06T17:01:49.026Z]  @firebase/database: FIREBASE WARNING: {"code":"app/invalid-credential","message":"Credential implementation provided to initializeApp() via the \"credential\" property failed to fetch a valid Google OAuth2 access token with the following error: \"request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com\"."} 
+2025-08-06 18:01:54: [2025-08-06T17:01:54.632Z]  @firebase/database: FIREBASE WARNING: {"code":"app/invalid-credential","message":"Credential implementation provided to initializeApp() via the \"credential\" property failed to fetch a valid Google OAuth2 access token with the following error: \"request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com\"."} 
+2025-08-06 18:02:00: [2025-08-06T17:02:00.696Z]  @firebase/database: FIREBASE WARNING: {"code":"app/invalid-credential","message":"Credential implementation provided to initializeApp() via the \"credential\" property failed to fetch a valid Google OAuth2 access token with the following error: \"request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com\"."} 
+2025-08-06 19:07:41: [2025-08-06T18:07:41.741Z]  @firebase/database: FIREBASE WARNING: {"code":"app/invalid-credential","message":"Credential implementation provided to initializeApp() via the \"credential\" property failed to fetch a valid Google OAuth2 access token with the following error: \"request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com\"."} 
+2025-08-06 19:07:52: [2025-08-06T18:07:52.780Z]  @firebase/database: FIREBASE WARNING: {"code":"app/invalid-credential","message":"Credential implementation provided to initializeApp() via the \"credential\" property failed to fetch a valid Google OAuth2 access token with the following error: \"request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com\"."} 

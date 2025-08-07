@@ -94,28 +94,13 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.set('trust proxy', true); // Activé pour gérer les requêtes depuis Nginx
 app.disable('x-powered-by');
 
-// Configuration CORS pour Express (désactivée car gérée par Nginx)
-// app.use((req, res, next) => {
-//   res.header('Access-Control-Allow-Origin', '*');
-//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-//   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-//   res.header('Access-Control-Allow-Credentials', 'true');
-//   if (req.method === 'OPTIONS') {
-//     return res.sendStatus(200);
-//   }
-//   next();
-// });
+// Configuration CORS supprimée - gérée par nginx
 
 // Créer le serveur HTTP
 const server = http.createServer(app);
 
-// Configurer Socket.IO avec CORS
+// Configurer Socket.IO sans CORS (géré par nginx)
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: true
-  },
   transports: ['websocket', 'polling'],
   pingTimeout: 60000,
   pingInterval: 25000
