@@ -93,21 +93,21 @@ export const SOCKET_CONFIG = {
 
 // Configuration des timeouts API (optimisés pour une meilleure UX)
 export const API_TIMEOUTS = {
-  default: 15000,      // 15 secondes par défaut (réduit)
-  upload: 60000,       // 1 minute pour uploads
-  whatsapp: 45000,     // 45 secondes pour WhatsApp (gardé long pour QR code)
-  firebase: 8000,      // 8 secondes pour Firebase auth (login rapide)
-  firebaseInit: 30000, // 30 secondes pour init Firebase (QR code)
-  firebaseStatus: 20000, // 20 secondes pour status Firebase (QR code)
-  health: 5000         // 5 secondes pour health checks (réduit)
+  default: 8000,       // 8 secondes par défaut (ultra-rapide)
+  upload: 30000,       // 30 secondes pour uploads
+  whatsapp: 15000,     // 15 secondes pour WhatsApp (rapide)
+  firebase: 5000,      // 5 secondes pour Firebase auth (ultra-rapide)
+  firebaseInit: 10000, // 10 secondes pour init Firebase (rapide)
+  firebaseStatus: 8000, // 8 secondes pour status Firebase (rapide)
+  health: 3000         // 3 secondes pour health checks (ultra-rapide)
 };
 
 // Configuration retry policy (optimisée pour login rapide)
 export const RETRY_CONFIG = {
-  maxRetries: 2,        // Réduit à 2 tentatives pour éviter les longs délais
-  retryDelay: 1000,     // Délai réduit à 1 seconde
-  retryDelayMultiplier: 1.2, // Multiplication plus faible
-  maxRetryDelay: 3000,  // Délai maximum réduit
+  maxRetries: 1,        // Réduit à 1 tentative pour ultra-rapidité
+  retryDelay: 500,      // Délai réduit à 0.5 seconde
+  retryDelayMultiplier: 1.1, // Multiplication très faible
+  maxRetryDelay: 1000,  // Délai maximum ultra-réduit
   retryCondition: (error) => {
     // Retry sur erreurs réseau, 5xx et certaines erreurs spécifiques
     if (!error.response) return true; // Erreur réseau
