@@ -52,8 +52,12 @@ class ApiService {
         // Ajouter des headers spécifiques selon l'endpoint
         if (config.url?.includes('/api/whatsapp/')) {
           config.timeout = API_TIMEOUTS.whatsapp;
+        } else if (config.url?.includes('/api/firebase/init')) {
+          config.timeout = API_TIMEOUTS.firebaseInit; // 30s pour init (QR code)
+        } else if (config.url?.includes('/api/firebase/status')) {
+          config.timeout = API_TIMEOUTS.firebaseStatus; // 20s pour status (QR code)
         } else if (config.url?.includes('/api/firebase/')) {
-          config.timeout = API_TIMEOUTS.firebase;
+          config.timeout = API_TIMEOUTS.firebase; // 8s pour auth seulement
         } else if (config.url?.includes('/api/files/upload')) {
           config.timeout = API_TIMEOUTS.upload;
           config.headers['Content-Type'] = 'multipart/form-data';

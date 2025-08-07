@@ -49,6 +49,7 @@ export default function WhatsLandStatus() {
 
     // Listeners Socket.IO simplifiés
     newSocket.on('qr', (qrCode) => {
+      console.log('📱 QR Code reçu via Socket.IO:', qrCode ? 'Oui' : 'Non');
       setQrCode(qrCode);
       setStatus('qr');
       setStatusMessage('Scannez le QR code avec WhatsApp');

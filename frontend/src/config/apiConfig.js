@@ -94,8 +94,10 @@ export const SOCKET_CONFIG = {
 export const API_TIMEOUTS = {
   default: 15000,      // 15 secondes par défaut (réduit)
   upload: 60000,       // 1 minute pour uploads
-  whatsapp: 45000,     // 45 secondes pour WhatsApp
-  firebase: 8000,      // 8 secondes pour Firebase (fortement réduit pour login rapide)
+  whatsapp: 45000,     // 45 secondes pour WhatsApp (gardé long pour QR code)
+  firebase: 8000,      // 8 secondes pour Firebase auth (login rapide)
+  firebaseInit: 30000, // 30 secondes pour init Firebase (QR code)
+  firebaseStatus: 20000, // 20 secondes pour status Firebase (QR code)
   health: 5000         // 5 secondes pour health checks (réduit)
 };
 
