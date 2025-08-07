@@ -52,6 +52,7 @@ const getApiUrl = () => {
   return '';
 };
 
+// Export de l'URL API
 export const API_URL = getApiUrl();
 
 // Configuration Socket.IO optimisée avec reconnexion intelligente
