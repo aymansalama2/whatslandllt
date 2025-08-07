@@ -421,7 +421,7 @@ class ApiService {
   async testConnection() {
     try {
       const startTime = Date.now();
-      const response = await this.get('/test', { timeout: 5000 });
+      const response = await this.get('/api/health', { timeout: 5000 });
       const latency = Date.now() - startTime;
       
       return {

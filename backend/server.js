@@ -115,6 +115,8 @@ const io = new Server(server, {
 });
 
 // Route de test pour vérifier que le serveur fonctionne
+// Endpoint /test supprimé - remplacé par /api/health
+/*
 app.get('/test', (req, res) => {
   res.json({
     status: 'ok',
@@ -124,6 +126,7 @@ app.get('/test', (req, res) => {
     headers: req.headers
   });
 });
+*/
 
 // Configuration Firebase Admin
 const firebaseAdmin = require('./firebase-admin-config');

@@ -25,11 +25,7 @@ export default defineConfig(({ command, mode }) => {
           changeOrigin: true,
           secure: false
         },
-        '/test': {
-          target: 'http://localhost:5001',
-          changeOrigin: true,
-          secure: false
-        },
+
         '/socket.io': {
           target: 'http://localhost:5001',
           changeOrigin: true,

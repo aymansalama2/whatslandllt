@@ -5,10 +5,12 @@
 
 // Configuration des URLs selon l'environnement
 const getApiUrl = () => {
-  // Priority: ENV variable > development detection > location detection > fallback
-  if (import.meta.env.VITE_API_URL) {
+  // Ignorer la variable d'environnement si elle contient l'IP problématique
+  if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('92.113.31.157')) {
     console.log('🔧 URL API depuis variable d\'environnement:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
+  } else if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.includes('92.113.31.157')) {
+    console.log('🚫 Variable d\'environnement ignorée (contient IP problématique):', import.meta.env.VITE_API_URL);
   }
   
   // Force proxy en mode développement (Vite proxy)
