@@ -34,6 +34,12 @@ const getApiUrl = () => {
       console.log('🔧 Domaine production détecté (proxy via nginx):', url);
       return url;
     }
+    
+    // Vérifier si c'est une IP directe (comme 92.113.31.157)
+    if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+      console.log('🔧 Accès par IP détecté, utilisation du même domaine');
+      return `${window.location.protocol}//${hostname}`;
+    }
   }
   
   // Fallback sécurisé - utilise le proxy
